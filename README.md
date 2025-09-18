@@ -62,8 +62,7 @@ project-name/
 ---
 
 ## Contributors
-- **Ryan Guan** - BCIT CST Student with a passion for creating user-friendly applications. Fun fact: I am a washed league of legends player.
-- **Teammate Name** - BCIT CST Student, Frontend enthusiast with a knack for creative design. Fun fact: Has a collection of over 50 houseplants.
+- **Niels van Atten- BCIT student who loves learning new things. Fun fact: I have sat in a Ford GT.
 
 ---
 
