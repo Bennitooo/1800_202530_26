@@ -62,6 +62,9 @@ project-name/
 ---
 
 ## Contributors
+- **Bennett Lazarro** - BCIT CST Student with a passion for creating user-friendly applications. Fun fact: Knows how to dance Standing Next To You and 3D by Jungkook.
+- **Ryan Guan** - BCIT CST Student, Frontend enthusiast with a knack for creative design. Fun fact: Has a collection of over 50 houseplants.
+- **Niels van Atten**- BCIT student who loves learning new things. Fun fact: I have sat in a Ford GT.
 - **Niels van Atten- BCIT student who loves learning new things. Fun fact: I have sat in a Ford GT.
 
 ---
