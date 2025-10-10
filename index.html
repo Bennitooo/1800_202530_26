@@ -1,36 +1,80 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
+  <head>
     <title>My BCIT Project</title>
-    <meta name="comp1800 template" content="My 1800 App">
+    <meta name="comp1800 template" content="My 1800 App" />
 
     <!-- Required meta tags -->
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <!-- Other libraries go here -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Google Icons (Material Design)-->
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      rel="stylesheet"
+    />
 
     <!-- Link to styles of your own -->
     <!-- <link rel="stylesheet" href="./styles/style.css"> -->
+  </head>
 
-</head>
-
-<body>
-
+  <body>
     <!------------------------------>
     <!-- Your HTML Layout go here -->
+    <nav class="navbar navbar-expand-lg bg-body-tertiary">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="#">APP NAME</a>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNav"
+          aria-controls="navbarNav"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav"></ul>
+        </div>
+      </div>
+    </nav>
     <!------------------------------>
     <!-- Stuff for body goes here -->
+    <div class="container">
+      <!-- Content here -->
+      <div class="p-5 mb-4 bg-light rounded-3">
+        <div class="container-fluid py-5">
+          <h1 class="display-5 fw-bold">Welcome to Elmo Hikes!</h1>
+          <p class="col-md-8 fs-4">Let's start the adventure now</p>
 
+          <button class="btn btn-primary btn-lg" type="button">
+            Login/Signup
+          </button>
 
+          <!-- Add an onclick attribute to define click event handler -->
+          <!-- <button onclick="window.location.href='login.html'" class="btn btn-primary btn-lg" type="button">Login/Signup</button> -->
+        </div>
+      </div>
+    </div>
+    <nav class="navbar justify-content-evenly fixed-bottombg-body-tertiary">
+      <div class="container text-center">
+        <span class="material-icons">home</span>
+        <span class="material-icons">favorite</span>
+        <span class="material-icons">favorite</span>
+        <span class="material-icons">favorite</span>
+        <span class="material-icons">map</span>
+      </div>
+    </nav>
     <!---------------------------------------------->
     <!-- Your own JavaScript functions go here    -->
     <!---------------------------------------------->
 
     <!-- Link to scripts of your own -->
-    <!-- <script type="module" src="./src/main.js"></script> -->
-
-</body>
-
+    <script type="module" src="./src/main.js"></script>
+  </body>
 </html>
