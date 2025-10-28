@@ -1,10 +1,11 @@
 @font-face {
-    font-family: ;
-    src: url(fonts/FOT-RodinWanpaku Pro EB.otf);
-    font-weight: normal;
-    font-style: normal;
+  font-family: "FOT-RodinWanpaku Pro EB"; 
+  src: url("/fonts/FOT-RodinWanpaku Pro EB.otf") format("opentype");
+  font-weight: normal;
+  font-style: normal;
 }
 
 body {
-    font-family: 'FOT-RodinWanpaku Pro EB', sans-serif;
+  font-family: "FOT-RodinWanpaku Pro EB" !important;
 }
+
