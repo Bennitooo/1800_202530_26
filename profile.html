@@ -1,59 +1,71 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <title>My BCIT Project</title>
-    <meta name="comp1800 template" content="My 1800 App" />
 
-    <!-- Required meta tags -->
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+<head>
+  <title>My BCIT Project</title>
+  <meta name="comp1800 template" content="My 1800 App" />
 
-    <!-- Web Components for shared navbar and footer layout -->
-    <script type="module" src="/src/components/site-navbar.js"></script>
-    <script type="module" src="/src/components/site-footer.js"></script>
+  <!-- Required meta tags -->
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <!-- Other libraries go here -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <!-- Google Icons (Material Design)-->
-    <link
-      href="https://fonts.googleapis.com/icon?family=Material+Icons"
-      rel="stylesheet"
-    />
+  <!-- Web Components for shared navbar and footer layout -->
+  <script type="module" src="/src/components/site-navbar.js"></script>
+  <script type="module" src="/src/components/site-footer.js"></script>
 
-    <!-- Link to styles of your own -->
-    <link rel="stylesheet" href="./styles/style.css" />
-  </head>
-  <body>
-    <!------------------------------>
-    <!-- Your HTML Layout go here -->
-    <!------------------------------>
+  <!-- Other libraries go here -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <!-- Google Icons (Material Design)-->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
 
-    <!-- our own navbar goes here -->
-    <site-navbar></site-navbar>
+  <!-- Link to styles of your own -->
+  <link rel="stylesheet" href="./styles/style.css" />
+</head>
 
-    <!-- Main content goes here -->
+<body>
+  <!------------------------------>
+  <!-- Your HTML Layout go here -->
+  <!------------------------------>
 
-    <div class="embed-responsive embed-responsive-16by9 d-flex align-items-center justify-content-center vh-100">
-      <iframe
-        class="embed-responsive-item"
-        src="https://www.youtube.com/embed/M7WgoBhF7gc?rel=0"
-        allowfullscreen
-      ></iframe>
+  <!-- our own navbar goes here -->
+  <site-navbar></site-navbar>
+
+  <!-- Main content goes here -->
+  <div class="container mx-auto py-5 d-flex justify-content-center">
+    <div class="card p-4">
+      <div class=" image d-flex flex-column justify-content-center align-items-center"> <button
+          class="img-fluid rounded mt-3 d-block mx-auto"> <img src="https://i.imgur.com/wvxPV9S.png" height="100" width="100" /></button>
+        <span class="name mt-3">Eleanor Pena</span> <span class="idd">@eleanorpena</span>
+        <div class="d-flex flex-row justify-content-center align-items-center gap-2"> <span
+            class="idd1">Oxc4c16a645_b21a</span> <span><i class="fa fa-copy"></i></span> </div>
+        <div class="d-flex flex-row justify-content-center align-items-center mt-3"> <span class="number">1069 <span
+              class="follow">Followers</span></span> </div>
+        <div class=" d-flex mt-2"> <button class="btn1 btn-dark">Edit Profile</button> </div>
+        <div class="text mt-3"> <span>Eleanor Pena is a creator of minimalistic x bold graphics and digital
+            artwork.<br><br> Artist/ Creative Director by Day #NFT minting@ with FND night. </span> </div>
+        <div class=" px-2 rounded mt-4 date "> <span class="join">Joined May,2021</span> </div>
+      </div>
     </div>
+  </div>
+  <div class="embed-responsive embed-responsive-16by9 d-flex align-items-center justify-content-center vh-100">
+    <iframe class="embed-responsive-item" src="https://www.youtube.com/embed/M7WgoBhF7gc?rel=0"
+      allowfullscreen></iframe>
+  </div>
 
-    <!-- our own footer goes here -->
-    <site-footer></site-footer>
+  <!-- our own footer goes here -->
+  <site-footer></site-footer>
 
-    <!---------------------------------------------->
-    <!-- Your own JavaScript functions go here    -->
-    <!---------------------------------------------->
+  <!---------------------------------------------->
+  <!-- Your own JavaScript functions go here    -->
+  <!---------------------------------------------->
 
-    <!-- Link to scripts of your own -->
-    <script type="module" src="./src/main.js"></script>
-    <!-- Firebase and authentication related scripts -->
-    <!-- The order of loading matters -->
-    <script type="module" src="/src/firebaseConfig.js"></script>
-    <script type="module" src="/src/authentication.js"></script>
-  </body>
+  <!-- Link to scripts of your own -->
+  <script type="module" src="./src/main.js"></script>
+  <!-- Firebase and authentication related scripts -->
+  <!-- The order of loading matters -->
+  <script type="module" src="/src/firebaseConfig.js"></script>
+  <script type="module" src="/src/authentication.js"></script>
+</body>
+
 </html>
