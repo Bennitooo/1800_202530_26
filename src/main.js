@@ -3,10 +3,10 @@ import 'bootstrap';
 import { db } from "./firebaseConfig.js";
 import { doc, onSnapshot, getDoc } from "firebase/firestore";
 
-function readQuote(day) {
-    const quoteDocRef = doc(db, "quotes", day); // Get a reference to the document
+function readQuote(qid) {
+    const quoteRef = doc(db, "quotes", qid); // Get a reference to the document
 
-    onSnapshot(quoteDocRef, (docSnap) => { // Listen for real-time updates
+    onSnapshot(quoteRef, (docSnap) => { // Listen for real-time updates
         if (docSnap.exists()) {
             document.getElementById("quote-goes-here").innerHTML = docSnap.data().quote;
         } else {
@@ -41,6 +41,6 @@ function showDashboard() {
 function sayHello() {
     
 }
-readQuote("tuesday");
+readQuote("df89hohj3sd");
 showDashboard();
 // document.addEventListener('DOMContentLoaded', sayHello);
