@@ -1,20 +1,24 @@
-import 'bootstrap/dist/css/bootstrap.min.css';
-import 'bootstrap';
+import "bootstrap/dist/css/bootstrap.min.css";
+import "bootstrap";
 import { db } from "./firebaseConfig.js";
-import { doc, onSnapshot, getDoc } from "firebase/firestore";
+import { doc, onSnapshot, getDoc, collection, getDocs, addDoc, serverTimestamp} from "firebase/firestore";
 
-function readQuote(qid) {
-    const quoteRef = doc(db, "quotes", qid); // Get a reference to the document
-
-    onSnapshot(quoteRef, (docSnap) => { // Listen for real-time updates
-        if (docSnap.exists()) {
-            document.getElementById("quote-goes-here").innerHTML = docSnap.data().quote;
-        } else {
-            console.log("No such document!");
-        }
-    }, (error) => {
-        console.error("Error listening to document: ", error);
+async function readQuote() {
+    const quotesCollection = collection(db, "quotes");
+    const querySnapshot = await getDocs(quotesCollection);
+    const quotes = [];
+    querySnapshot.forEach((doc) => {
+        quotes.push(doc.data());
     });
+
+    if (quotes.length > 0) {
+        const randomIndex = Math.floor(Math.random() * quotes.length);
+        const randomQuote = quotes[randomIndex];
+
+        document.getElementById("quote-goes-here").textContent = randomQuote.quote;
+    } else {
+        document.getElementById("quote-goes-here").textContent = "No quotes found.";
+    }
 }
 
 function showDashboard() {
@@ -38,9 +42,7 @@ function showDashboard() {
         }
     });
 }
-function sayHello() {
-    
-}
-readQuote("df89hohj3sd");
+function sayHello() { }
+readQuote();
 showDashboard();
 // document.addEventListener('DOMContentLoaded', sayHello);
