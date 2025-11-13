@@ -25,7 +25,7 @@
     <link rel="stylesheet" href="./styles/style.css" />
     
     </head>
-        <body>
+        <body class="pb-5">
         <!------------------------------>
         <!-- Your HTML Layout go here -->
         <!------------------------------>
@@ -34,6 +34,13 @@
     <site-navbar></site-navbar>
 
     <!-- Main content goes here -->
+    <!-- somewhere in the body -->
+    <main class="container mt-4 mb-5">
+      <h2 class="h4 mb-3">Active Workout Sessions</h2>
+      <div id="sessionsList" class="row g-3">
+      <div id="sessionsLoading" class="col-12 text-muted text-center">Loading…</div>
+    </div>
+    </main>
 
     <!-- our own footer goes here -->
     <site-footer></site-footer>
@@ -48,6 +55,6 @@
     <!-- The order of loading matters -->
     <script type="module" src="/src/firebaseConfig.js"></script>
     <script type="module" src="/src/authentication.js"></script>
-    
+    <script type="module" src="/src/sessionsList.js"></script>
   </body>
 </html>

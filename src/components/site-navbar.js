@@ -70,10 +70,13 @@ class SiteNavbar extends HTMLElement {
     //         </div>
     //     </div>
     renderAuthControls() {
-        const authControls = this.querySelector('#authControls');
+        // const authControls = this.querySelector('#authControls');
+        const target = document.getElementById("#authControls");
+        if (!target) return;
 
         // Initialize with invisible placeholder to maintain layout space
-        authControls.innerHTML = `<div class="btn btn-outline-light" style="visibility: hidden; min-width: 80px;">Log out</div>`;
+        //authControls.innerHTML = `<div class="btn btn-outline-light" style="visibility: hidden; min-width: 80px;">Log out</div>`;
+        target.innerHTML = `<div class="btn btn-outline-light" style="visibility: hidden; min-width: 80px;">Log out</div>`;
 
         onAuthStateChanged(auth, (user) => {
             let updatedAuthControl;
