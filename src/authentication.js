@@ -65,6 +65,7 @@ export async function signupUser(name, email, password) {
       name: name,
       email: email,
       country: "Canada",
+      bio: "Starting my fitness journey!",
     });
 
     console.log("Firestore user document created successfully!");
