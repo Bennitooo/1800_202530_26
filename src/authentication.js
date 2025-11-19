@@ -69,7 +69,7 @@ export async function signupUser(name, email, password) {
 
     console.log("Firestore user document created successfully!");
 
-    // 👉 XP doc ONLY created on signup
+    // XP doc ONLY created on signup
     await createUserXPDocument(user);
   } catch (error) {
     console.error("Error creating user document in Firestore:", error);
