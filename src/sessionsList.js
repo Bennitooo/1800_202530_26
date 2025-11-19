@@ -1,13 +1,63 @@
 import { auth, db } from "./firebaseConfig.js";
 import { onAuthStateChanged } from "firebase/auth";
-import { collection, query, where, orderBy, onSnapshot } from "firebase/firestore";
+import {
+  collection,
+  query,
+  where,
+  orderBy,
+  onSnapshot,
+} from "firebase/firestore";
 
 const listEl = document.getElementById("sessionsList");
 const loadingEl = document.getElementById("sessionsLoading");
+const modalBody = document.getElementById("sessionModalBody");
 
+
+function openSessionModal(docId, data) {
+  console.log(docId); // confirms the id is passed in
+
+  // set modal content
+  modalBody.innerHTML = `
+    <h4>${data.name}</h4>
+    <p><strong>Movements:</strong> <span class="badge bg-primary">${data.movement}</span></p>
+  `;
+
+  // attach click handler AFTER the DOM is updated
+  const editBtn = document.getElementById("editSessionBtn");
+  if (editBtn) {
+    // assign (not addEventListener) so old handlers are replaced cleanly
+    editBtn.onclick = (e) => {
+      e.preventDefault();
+      console.log("Edit/Join clicked — navigating to EachActiveSession with id:", docId);
+      // navigate to detail page with docID query param
+      window.location.href = `EachActiveSession.html?docID=${encodeURIComponent(docId)}`;
+    };
+  } else {
+    console.warn("[sessions] editSessionBtn not found in DOM when opening modal");
+  }
+
+  // show modal
+  const modal = new bootstrap.Modal(document.getElementById("sessionModal"));
+  modal.show();
+}
+
+
+// // Delete session card after a certain time has passed
+// function removeCard(element) {
+//   if (element) {
+//     element.remove();
+//   }
+// }
+
+// setTimeout(function() {
+//   removeCard(listEl);
+// }, 5000)
+
+// Console warning detecting if there isn't a #sessionsList
 if (!listEl) {
   console.warn("[sessions] #sessionsList not found on this page");
 } else {
+  // Create cards on sessions.html
   function sessionCard(docId, data) {
     const created = data.createdAt?.toDate
       ? data.createdAt.toDate().toLocaleString()
@@ -15,6 +65,7 @@ if (!listEl) {
     const div = document.createElement("div");
     div.className = "col-12 col-md-6 col-lg-4";
     div.dataset.id = docId;
+    div.style.cursor = "pointer";
     div.innerHTML = `
       <div class="card h-100 shadow-sm">
         <div class="card-body">
@@ -23,6 +74,9 @@ if (!listEl) {
           <span class="badge bg-primary">${data.movement}</span>
         </div>
       </div>`;
+
+    // Opens session modal when user clicks on it
+    div.addEventListener("click", () => openSessionModal(docId, data));
     return div;
   }
 
@@ -74,5 +128,3 @@ if (!listEl) {
     );
   });
 }
-
-

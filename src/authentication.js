@@ -58,7 +58,7 @@ export async function signupUser(name, email, password) {
   const user = userCredential.user;
 
   await updateProfile(user, { displayName: name });
-
+  
   try {
     // Create main user profile
     await setDoc(doc(db, "users", user.uid), {
