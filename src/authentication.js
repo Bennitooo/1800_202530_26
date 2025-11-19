@@ -8,7 +8,8 @@ import { doc, setDoc, getDoc } from "firebase/firestore";
 
 // Firebase Auth imports
 import { auth } from "/src/firebaseConfig.js";
-import { signInWithEmailAndPassword,
+import { 
+  signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   updateProfile,
   onAuthStateChanged,
@@ -23,9 +24,18 @@ export async function loginUser(email, password) {
 }
 
 // -------------------------------------------------------------
-// createUserXPDocument(user)
+// DEFAULT BADGE COLLECTION
+// Assign to every new user in usersXPsystem
 // -------------------------------------------------------------
-// ONLY runs when the user signs up, never on login
+const DEFAULT_BADGE_COLLECTION = [
+  "favorite",
+  "anchor",
+  "star"
+];
+
+// -------------------------------------------------------------
+// createUserXPDocument(user)
+// Creates XP doc ONLY on signup
 // -------------------------------------------------------------
 async function createUserXPDocument(user) {
   const xpRef = doc(db, "usersXPsystem", user.uid);
@@ -40,7 +50,8 @@ async function createUserXPDocument(user) {
   await setDoc(xpRef, {
     xp: 0,
     level: 1,
-    badges: [],
+    badges: [],                // ← user starts with no selected badges
+    badgeCollection: DEFAULT_BADGE_COLLECTION,   // ← available badges
   });
 
   console.log("New XP document created for:", user.uid);
@@ -50,11 +61,7 @@ async function createUserXPDocument(user) {
 // signupUser(name, email, password)
 // -------------------------------------------------------------
 export async function signupUser(name, email, password) {
-  const userCredential = await createUserWithEmailAndPassword(
-    auth,
-    email,
-    password
-  );
+  const userCredential = await createUserWithEmailAndPassword(auth, email, password);
   const user = userCredential.user;
 
   await updateProfile(user, { displayName: name });
@@ -72,24 +79,13 @@ export async function signupUser(name, email, password) {
 
     // XP doc ONLY created on signup
     await createUserXPDocument(user);
+
   } catch (error) {
     console.error("Error creating user document in Firestore:", error);
   }
 
   return user;
 }
-
-// -------------------------------------------------------------
-// IMPORTANT: Removed XP creation from auth listener!
-// This prevents XP from resetting on login.
-// -------------------------------------------------------------
-
-// ← This block was deleted:
-// onAuthStateChanged(auth, async (user) => {
-//   if (user) {
-//     await createUserXPDocument(user);
-//   }
-// });
 
 // -------------------------------------------------------------
 // logoutUser()
