@@ -12,6 +12,7 @@ function showProfile() {
     const progressText = document.getElementById("progress-text");
     const editBioButton = document.getElementById("editBioButton");
     const bioEditor = document.getElementById("bio-editor");
+    const saveBioButton = document.getElementById("saveBioButton");
 
     onAuthReady(async (user) => {
         if (!user) {
@@ -57,38 +58,38 @@ function showProfile() {
             if (progressBar && progressText) {
                 progressBar.style.width = progressPercent + "%";
                 progressBar.setAttribute("aria-valuenow", progressPercent);
-                const percentRounded = Math.round(progressPercent);
-                progressText.textContent = `${percentRounded}%`;
+                progressText.textContent = `${Math.round(progressPercent)}%`;
             }
         });
 
         // -----------------------
-        // EDIT BIO BUTTON
+        // INLINE BIO EDIT
         // -----------------------
-        if (editBioButton && bioEditor && bioElement) {
-            let isEditing = false;
+        if (editBioButton) {
+            editBioButton.addEventListener("click", () => {
+                // Show textarea and save button
+                bioEditor.value = bioElement.textContent;
+                bioElement.classList.add("d-none");
+                bioEditor.classList.remove("d-none");
+                saveBioButton.classList.remove("d-none");
+            });
+        }
 
-            editBioButton.addEventListener("click", async () => {
-                if (!isEditing) {
-                    // Start editing
-                    bioEditor.value = bioElement.textContent;
-                    bioEditor.classList.remove("d-none");
-                    bioElement.classList.add("d-none");
-                    isEditing = true;
-                } else {
-                    // Save changes
-                    const newBio = bioEditor.value.trim();
-                    try {
-                        await updateDoc(userDocRef, { bio: newBio });
-                        // UI will auto-update due to onSnapshot
-                        bioEditor.classList.add("d-none");
-                        bioElement.classList.remove("d-none");
-                        editBioButton.textContent = "edit_square"; // Switch back to edit icon
-                        isEditing = false;
-                    } catch (error) {
-                        console.error("Error updating bio:", error);
-                        alert("Failed to update bio. Try again.");
-                    }
+        if (saveBioButton) {
+            saveBioButton.addEventListener("click", async () => {
+                const newBio = bioEditor.value.trim();
+                if (newBio === "") return; // optional: don't save empty
+
+                try {
+                    await updateDoc(userDocRef, { bio: newBio });
+                    bioElement.textContent = newBio;
+
+                    // Hide editor and save button
+                    bioElement.classList.remove("d-none");
+                    bioEditor.classList.add("d-none");
+                    saveBioButton.classList.add("d-none");
+                } catch (error) {
+                    console.error("Error updating bio:", error);
                 }
             });
         }
