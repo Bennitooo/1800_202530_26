@@ -38,10 +38,11 @@ async function displayInfo() {
                 
                 const workout = workoutSnap.data();
                 const name = workout.name;
+                const movement = workout.movement;
 
                 // Update the page
                 document.getElementById("workoutName").textContent = name;
-                
+                document.getElementById("movementName").textContent = movement;
                 console.log("Workout loaded:", workout);
                 
             } catch (error) {

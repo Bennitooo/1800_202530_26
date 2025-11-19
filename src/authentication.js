@@ -8,7 +8,8 @@ import { doc, setDoc, getDoc } from "firebase/firestore";
 
 // Firebase Auth imports
 import { auth } from "/src/firebaseConfig.js";
-import { signInWithEmailAndPassword,
+import {
+  signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   updateProfile,
   onAuthStateChanged,
@@ -58,13 +59,14 @@ export async function signupUser(name, email, password) {
   const user = userCredential.user;
 
   await updateProfile(user, { displayName: name });
-  
+
   try {
     // Create main user profile
     await setDoc(doc(db, "users", user.uid), {
       name: name,
       email: email,
       country: "Canada",
+      bio: "Sup dawg",
     });
 
     console.log("Firestore user document created successfully!");
