@@ -57,7 +57,7 @@ export async function signupUser(name, email, password) {
   const userCredential = await createUserWithEmailAndPassword(auth, email, password);
   const user = userCredential.user; // Get the user object
   await updateProfile(user, { displayName: name });
-
+  
   try {
     await setDoc(doc(db, "users", user.uid), {
       name: name,
