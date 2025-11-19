@@ -1,7 +1,7 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap';
 import { db } from "./firebaseConfig.js";
-import { doc, onSnapshot } from "firebase/firestore";
+import { doc, onSnapshot, updateDoc } from "firebase/firestore";
 import { onAuthReady } from "./authentication.js";
 
 function showProfile() {
@@ -10,6 +10,8 @@ function showProfile() {
     const bioElement   = document.getElementById("bio-goes-here");
     const progressBar  = document.getElementById("myProgressBar");
     const progressText = document.getElementById("progress-text");
+    const editBioButton = document.getElementById("editBioButton");
+    const bioEditor = document.getElementById("bio-editor");
 
     onAuthReady(async (user) => {
         if (!user) {
@@ -34,7 +36,6 @@ function showProfile() {
                 bioElement.textContent = data.bio || "No bio available";
         });
 
-
         // -----------------------
         // XP / LEVEL + PROGRESS BAR
         // -----------------------
@@ -46,27 +47,51 @@ function showProfile() {
             const xp    = data.xp ?? 0;
             const level = data.level ?? 1;
 
-            // Basic leveling: 100 XP per level
             const xpPerLevel = 100;
             const currentLevelXP = xp % xpPerLevel;
             const progressPercent = (currentLevelXP / xpPerLevel) * 100;
 
-            // Update level display
             if (levelElement)
                 levelElement.textContent = level;
 
-            // Update progress bar
             if (progressBar && progressText) {
-
-                // Width of the bar
                 progressBar.style.width = progressPercent + "%";
                 progressBar.setAttribute("aria-valuenow", progressPercent);
-
-                // Centered percentage text
                 const percentRounded = Math.round(progressPercent);
                 progressText.textContent = `${percentRounded}%`;
             }
         });
+
+        // -----------------------
+        // EDIT BIO BUTTON
+        // -----------------------
+        if (editBioButton && bioEditor && bioElement) {
+            let isEditing = false;
+
+            editBioButton.addEventListener("click", async () => {
+                if (!isEditing) {
+                    // Start editing
+                    bioEditor.value = bioElement.textContent;
+                    bioEditor.classList.remove("d-none");
+                    bioElement.classList.add("d-none");
+                    isEditing = true;
+                } else {
+                    // Save changes
+                    const newBio = bioEditor.value.trim();
+                    try {
+                        await updateDoc(userDocRef, { bio: newBio });
+                        // UI will auto-update due to onSnapshot
+                        bioEditor.classList.add("d-none");
+                        bioElement.classList.remove("d-none");
+                        editBioButton.textContent = "edit_square"; // Switch back to edit icon
+                        isEditing = false;
+                    } catch (error) {
+                        console.error("Error updating bio:", error);
+                        alert("Failed to update bio. Try again.");
+                    }
+                }
+            });
+        }
     });
 }
 

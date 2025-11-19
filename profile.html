@@ -69,25 +69,39 @@
         </div>
 
 
-          <!-- BIO -->
-          <div class="card p-3 mb-2 w-80 mx-auto">
-            <h5 class="card-title">Bio</h5>
-            <p class="card-text text-center mb-0">
-              <span id="bio-goes-here">Loading...</span>
-            </p>
+        <!-- BIO -->
+        <div class="card p-3 mb-2 w-80 mx-auto position-relative">
+          <h5 class="card-title">Bio</h5>
+
+          <!-- Display bio -->
+          <p id="bio-goes-here" class="card-text mb-2">Loading...</p>
+
+          <!-- Editable textarea, initially hidden -->
+          <textarea id="bio-editor" class="form-control mb-2 d-none" rows="3"></textarea>
+
+          <!-- Edit button in bottom right -->
+          <div class="d-flex justify-content-end">
+            <span id="editBioButton" class="material-icons"
+              style="cursor: pointer; color: rgb(69, 69, 69); font-size: 28px;">
+              edit_square
+            </span>
           </div>
-          
         </div>
+
+
+
+
       </div>
     </div>
+  </div>
 
-    <!-- Footer -->
-    <site-footer></site-footer>
+  <!-- Footer -->
+  <site-footer></site-footer>
 
-    <!-- Scripts -->
-    <script type="module" src="./src/profile.js"></script>
-    <script type="module" src="/src/firebaseConfig.js"></script>
-    <script type="module" src="/src/authentication.js"></script>
+  <!-- Scripts -->
+  <script type="module" src="./src/profile.js"></script>
+  <script type="module" src="/src/firebaseConfig.js"></script>
+  <script type="module" src="/src/authentication.js"></script>
 
 </body>
 
