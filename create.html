@@ -1,82 +1,82 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <title>Create Session - FitQuest</title>
-    <meta name="comp1800 template" content="My 1800 App" />
 
-    <!-- Required meta tags -->
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+<head>
+  <title>Create Session - FitQuest</title>
+  <meta name="comp1800 template" content="My 1800 App" />
 
-    <!-- Web Components for shared navbar and footer layout -->
-    <script type="module" src="/src/components/site-navbar.js"></script>
-    <script type="module" src="/src/components/site-footer.js"></script>
+  <!-- Required meta tags -->
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <!-- Other libraries go here -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <!-- Google Icons (Material Design)-->
-    <link
-        href="https://fonts.googleapis.com/icon?family=Material+Icons"
-        rel="stylesheet"
-    />
+  <!-- Web Components for shared navbar and footer layout -->
+  <script type="module" src="/src/components/site-navbar.js"></script>
+  <script type="module" src="/src/components/site-footer.js"></script>
 
-    <!-- Link to styles of your own -->
-    <link rel="stylesheet" href="./styles/style.css" />
-    
-    </head>
-        <body>
-        <!------------------------------>
-        <!-- Your HTML Layout go here -->
-        <!------------------------------>
+  <!-- Other libraries go here -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <!-- Google Icons (Material Design)-->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
 
-    <!-- our own navbar goes here -->
-    <site-navbar></site-navbar>
+  <!-- Link to styles of your own -->
+  <link rel="stylesheet" href="./styles/style.css" />
 
-    <!-- Main content goes here -->
-    <div class="container">
-      <!-- Content here -->
-      <div class="py-5 mb-10 rounded-3 d-flex justify-content-center align-items-center vh-100" style="transform: translateY(-10%);">
-        <div class="container-fluid py-5 text-center">
-          <h1 class="display-5 fw-bold">Create your own session</h1>
-          <p class="fs-4">Let's start your fitness journey!</p>
-          <!-- Add an onclick attribute to define click event handler -->
-          <!-- Button trigger modal -->
-          <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
-            Create
-          </button>
-        </div>
+</head>
+
+<body>
+  <!------------------------------>
+  <!-- Your HTML Layout go here -->
+  <!------------------------------>
+
+  <!-- our own navbar goes here -->
+  <site-navbar></site-navbar>
+
+  <!-- Main content goes here -->
+  <div class="container">
+    <!-- Content here -->
+    <div class="py-5 mb-10 rounded-3 d-flex justify-content-center align-items-center vh-100"
+      style="transform: translateY(-10%);">
+      <div class="container-fluid py-5 text-center">
+        <h1 class="display-5 fw-bold">Create your own session</h1>
+        <p class="fs-4">Let's start your fitness journey!</p>
+        <!-- Add an onclick attribute to define click event handler -->
+        <!-- Button trigger modal -->
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
+          Create
+        </button>
       </div>
+    </div>
 
-      <!-- Modal -->
-          <div class="modal fade" id="staticBackdrop" data-bs-backdrop="true" data-bs-keyboard="true" tabindex="-1">
-            <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered">
-              <div class="modal-content">
-                <div class="modal-header">
-                  <h5 class="modal-title" id="staticBackdropLabel">Create Workout Session</h5>
-                </div>
-                
-                <!-- forms -->
-                <form id="sessionForm">
-                <div class="modal-body">
-                  <div class="form-floating mb-3">
-                    <input id="sessionNameInput" type="text" class="form-control" placeholder="My session" required>
-                    <label for="sessionNameInput">Name your session</label>
-                  </div>
+    <!-- Modal -->
+    <div class="modal fade" id="staticBackdrop" data-bs-backdrop="true" data-bs-keyboard="true" tabindex="-1">
+      <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="staticBackdropLabel">Create Workout Session</h5>
+          </div>
 
-                  <div class="form-floating mb-3">
-                    <select id="movementSelect" class="form-select" required>
-                      <option value="Bench Press">Bench Press</option>
-                      <option value="Incline Bench Press">Incline Bench Press</option>
-                      <option value="Machine Flyes">Machine Flyes</option>
-                      <option value="Chest Dips">Chest Dips</option>
-                      <option value="Dumbbell Press">Dumbbell Press</option>
-                      <option value=""></option>
-                    </select>
-                    <label for="movementSelect">Pick a chest movement</label>
-                  </div>
-                  
-                  <!-- <div class="form-floating mb-3">
+          <!-- forms -->
+          <form id="sessionForm">
+            <div class="modal-body">
+              <div class="form-floating mb-3">
+                <input id="sessionNameInput" type="text" class="form-control" placeholder="My session" required>
+                <label for="sessionNameInput">Name your session</label>
+              </div>
+
+              <div class="form-floating mb-3">
+                <select id="movementSelect" class="form-select" required>
+                  <option value="Bench Press">Bench Press</option>
+                  <option value="Incline Bench Press">Incline Bench Press</option>
+                  <option value="Machine Flyes">Machine Flyes</option>
+                  <option value="Chest Dips">Chest Dips</option>
+                  <option value="Dumbbell Press">Dumbbell Press</option>
+                  <option value=""></option>
+                </select>
+                <label for="movementSelect">Pick a chest movement</label>
+              </div>
+
+              <!-- <div class="form-floating mb-3">
                     <select id="movementSelect" class="form-select" required>
                       <option value="Bench Press">Bench Press</option>
                       <option value="Incline Bench Press">Incline Bench Press</option>
@@ -87,20 +87,25 @@
                     </select>
                     <label for="movementSelect">Pick a chest movement</label>
                   </div> -->
-                </div>
-                <!-- forms -->
-              
-              <!-- buttons to create or close the modal -->
-              <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <!-- submit the form -->
-                <button type="submit" class="btn btn-primary">Create</button>
-              </div>
-            </form>
-          </div>
+            </div>
+            <!-- forms -->
+
+            <!-- buttons to create or close the modal -->
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+              <!-- submit the form -->
+              <button type="submit" class="btn btn-primary">Create</button>
+            </div>
+          </form>
         </div>
       </div>
-  
+    </div>
+
+    <!-- Notification Container -->
+    <div id="notification-container" class="position-fixed top-0 start-50 translate-middle-x mt-3"
+      style="z-index: 2000; width: auto;">
+    </div>
+
 
     <!-- our own footer goes here -->
     <site-footer></site-footer>
@@ -115,7 +120,10 @@
     <!-- The order of loading matters -->
     <script type="module" src="/src/firebaseConfig.js"></script>
     <script type="module" src="/src/authentication.js"></script>
-    <script type="module" src="/src/modal.js"></script> 
-    
-  </body>
+    <script type="module" src="/src/modal.js"></script>
+    <script type="module" src="/src/notification.js"></script>
+
+
+</body>
+
 </html>
