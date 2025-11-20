@@ -2,7 +2,7 @@
 <html lang="en">
 
 <head>
-  <title>My BCIT Project</title>
+  <title>FitQuest</title>
   <meta name="comp1800 template" content="My 1800 App" />
 
   <!-- Required meta tags -->
@@ -13,7 +13,7 @@
   <script type="module" src="/src/components/site-navbar.js"></script>
   <script type="module" src="/src/components/site-footer.js"></script>
 
-  <!-- Google Fonts -->
+  <!-- Google Icons -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
@@ -24,19 +24,24 @@
 
 <body>
 
-  <!-- Navbar -->
   <site-navbar></site-navbar>
 
-  <!-- Main content -->
-  <div class="container py-5 mb-5 d-flex align-items-center justify-content-center w-75">
-    <div class="card text-center" style="min-width: 75%; min-height: 65vh;">
+  <div class="container py-5 mb-5 w-75 mx-auto">
+    <div class="card text-center" style="min-width: 75%;">
       <div class="card-header">Profile</div>
 
-      <!-- Profile Image -->
+      <!-- Profile Image + Upload -->
       <div class="image d-flex flex-column justify-content-center align-items-center pt-3">
-        <span class="border border-5 border-primary rounded-circle">
-          <img src="/images/elmo.jpg" class="rounded-circle" height="100" width="100" alt="Profile Picture">
+        <span class="border border-5 border-primary rounded-circle" style="cursor: pointer;">
+          <img id="profileImage"
+               class="rounded-circle"
+               height="120"
+               width="120"
+               alt="Profile Picture">
         </span>
+
+        <!-- Hidden image picker -->
+        <input type="file" id="inputImage" accept="image/*" class="d-none">
       </div>
 
       <div class="container gy-5 card-body px-4">
@@ -46,59 +51,83 @@
           <span id="name-goes-here">Loading...</span>
         </h5>
 
-        <!-- BADGES (placeholder for future expansion) -->
-        <div class="card p-3 mb-3 w-80 mx-auto">
+        <!-- BADGES -->
+        <div class="card p-3 mb-3 mx-auto w-100 position-relative">
+          <span id="editBadgeButton" class="material-icons position-absolute"
+                style="top: 12px; right: 12px; cursor: pointer; color: #444; font-size: 22px;">
+            edit_square
+          </span>
+
           <h5 class="card-title">Badges</h5>
+
+          <div id="badges-container" class="d-flex gap-3 justify-content-center align-items-center">
+            <span id="no-badges-text" class="text-muted">No Badges</span>
+          </div>
         </div>
 
-        <!-- LEVEL + XP PROGRESS -->
-        <div class="card p-3 mb-3 w-80 mx-auto">
+        <!-- LEVEL + XP -->
+        <div class="card p-3 mb-3 mx-auto w-100">
           <p class="mb-2 text-center">
             Lvl: <span id="level-goes-here">0</span>
           </p>
 
           <div class="progress position-relative">
-            <div id="myProgressBar" class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0"
-              aria-valuemax="100" style="width: 0%;">
+            <div id="myProgressBar" class="progress-bar" role="progressbar"
+                 aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"
+                 style="width: 0%;">
             </div>
-            <span id="progress-text" class="w-100 text-center position-absolute"
-              style="color: black; font-weight: bold;">
+
+            <span id="progress-text"
+                  class="w-100 text-center position-absolute"
+                  style="color: black; font-weight: bold;">
               0%
             </span>
           </div>
         </div>
 
-
         <!-- BIO -->
-        <div class="card p-3 mb-2 w-80 mx-auto position-relative">
+        <div class="card p-3 mb-2 mx-auto w-100 position-relative">
+
+          <span id="editBioButton" class="material-icons position-absolute"
+                style="top: 12px; right: 12px; cursor: pointer; color: #444; font-size: 22px;">
+            edit_square
+          </span>
+
           <h5 class="card-title">Bio</h5>
 
-          <!-- Display bio -->
           <p id="bio-goes-here" class="card-text mb-2">Loading...</p>
 
-          <!-- Editable textarea, initially hidden -->
-          <textarea id="bio-editor" class="form-control mb-2 d-none" rows="3"></textarea>
-
-          <!-- Edit button in bottom right -->
-          <div class="d-flex justify-content-end">
-            <span id="editBioButton" class="material-icons"
-              style="cursor: pointer; color: rgb(69, 69, 69); font-size: 24px;">
-              edit_square
-            </span>
-          </div>
+          <textarea id="bio-editor" class="form-control mb-2 d-none" rows="5"></textarea>
         </div>
-
-
-
 
       </div>
     </div>
   </div>
 
-  <!-- Footer -->
+  <!-- Badge Selection Modal -->
+  <div class="modal fade" id="badgeModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+
+        <div class="modal-header">
+          <h5 class="modal-title mx-auto">Select Badges</h5>
+        </div>
+
+        <div class="modal-body">
+          <div id="badge-list" class="d-flex flex-wrap gap-3 justify-content-center"></div>
+        </div>
+
+        <div class="modal-footer d-flex justify-content-between">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button id="saveBadgesBtn" type="button" class="btn btn-primary">Save Selection</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
   <site-footer></site-footer>
 
-  <!-- Scripts -->
   <script type="module" src="./src/profile.js"></script>
   <script type="module" src="/src/firebaseConfig.js"></script>
   <script type="module" src="/src/authentication.js"></script>
