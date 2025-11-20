@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <title>FitQuest</title>
+    <title>Sessions - FitQuest</title>
     <meta name="comp1800 template" content="My 1800 App" />
 
     <!-- Required meta tags -->
@@ -37,11 +37,25 @@
     <!-- somewhere in the body -->
     <main class="container mt-4 mb-5">
       <h2 class="h4 mb-3">Active Workout Sessions</h2>
+      
+      <!-- ADD THESE TOGGLE BUTTONS HERE -->
+      <div class="mb-3">
+        <div class="btn-group" role="group" aria-label="Session view toggle">
+          <button type="button" class="btn btn-primary" id="mySessionsBtn">
+            My Sessions
+          </button>
+          <button type="button" class="btn btn-outline-primary" id="allSessionsBtn">
+            All Sessions
+          </button>
+        </div>
+      </div>
+      <!-- END OF NEW CODE -->
+      
       <div id="sessionsList" class="row g-3">
       <div id="sessionsLoading" class="col-12 text-muted text-center">Loading…</div>
     </div>
     </main>
-    
+
     <div class="modal fade" id="sessionModal" tabindex="-1" aria-labelledby="sessionModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
@@ -57,8 +71,8 @@
         <button type="button" class="btn btn-primary" id="editSessionBtn">Join</button>
       </div>
     </div>
-  </div>
-</div>
+    </div>
+    </div>
 
 
     <!-- our own footer goes here -->
@@ -75,6 +89,7 @@
     <script type="module" src="/src/firebaseConfig.js"></script>
     <script type="module" src="/src/authentication.js"></script>
     <script type="module" src="/src/sessionsList.js"></script>
+    
     <!-- Bootstrap Bundle with Popper (includes both Bootstrap JS and Popper) -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   </body>

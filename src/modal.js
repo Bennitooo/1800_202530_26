@@ -65,7 +65,9 @@ document.getElementById("sessionForm").addEventListener("submit", async (e) => {
             uid: user.uid,
             name,
             movement,
-            createdAt: serverTimestamp()
+            createdAt: serverTimestamp(),
+            creatorName: user.displayName || user.email || "Anonymous",
+            isPublic: true,
 });
 
     // clear inputs
