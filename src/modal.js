@@ -85,4 +85,23 @@ document.getElementById("sessionForm").addEventListener("submit", async (e) => {
     }
 });
 
+import { showNotification } from "./notification.js";
 
+document.addEventListener("DOMContentLoaded", () => {
+    const form = document.getElementById("sessionForm");
+
+    form.addEventListener("submit", (e) => {
+        e.preventDefault();
+
+        // Close the modal
+        const modalEl = document.getElementById("staticBackdrop");
+        const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+        modal.hide();
+
+        // Trigger notification
+        showNotification("Session Created!");
+
+        // Optional: reset the form
+        form.reset();
+    });
+});
