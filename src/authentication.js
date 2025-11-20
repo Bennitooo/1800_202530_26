@@ -1,5 +1,4 @@
 // ------------------------------------------------------------
-// Part of the COMP1800 Project
 // Firebase Authentication helper functions
 // ------------------------------------------------------------
 
@@ -8,7 +7,8 @@ import { doc, setDoc, getDoc } from "firebase/firestore";
 
 // Firebase Auth imports
 import { auth } from "/src/firebaseConfig.js";
-import { signInWithEmailAndPassword,
+import { 
+  signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   updateProfile,
   onAuthStateChanged,
@@ -16,83 +16,58 @@ import { signInWithEmailAndPassword,
 } from "firebase/auth";
 
 // -------------------------------------------------------------
-// loginUser(email, password)
+// loginUser()
 // -------------------------------------------------------------
 export async function loginUser(email, password) {
   return signInWithEmailAndPassword(auth, email, password);
 }
 
 // -------------------------------------------------------------
-// createUserXPDocument(user)
+// Default available badges
 // -------------------------------------------------------------
-// ONLY runs when the user signs up, never on login
+const DEFAULT_BADGE_COLLECTION = ["favorite", "anchor", "star"];
+
+// -------------------------------------------------------------
+// Creates XP profile on FIRST sign-up only
 // -------------------------------------------------------------
 async function createUserXPDocument(user) {
   const xpRef = doc(db, "usersXPsystem", user.uid);
 
-  // Prevent overwriting existing XP data
   const snap = await getDoc(xpRef);
-  if (snap.exists()) {
-    console.log("XP document already exists — not creating again.");
-    return;
-  }
+  if (snap.exists()) return;
 
   await setDoc(xpRef, {
     xp: 0,
     level: 1,
     badges: [],
+    badgeCollection: DEFAULT_BADGE_COLLECTION,
   });
-
-  console.log("New XP document created for:", user.uid);
 }
 
 // -------------------------------------------------------------
-// signupUser(name, email, password)
+// signupUser()
 // -------------------------------------------------------------
 export async function signupUser(name, email, password) {
-  const userCredential = await createUserWithEmailAndPassword(
-    auth,
-    email,
-    password
-  );
+  const userCredential = await createUserWithEmailAndPassword(auth, email, password);
   const user = userCredential.user;
 
   await updateProfile(user, { displayName: name });
-  
-  try {
-    // Create main user profile
-    await setDoc(doc(db, "users", user.uid), {
-      name: name,
-      email: email,
-      country: "Canada",
-      bio: "Starting my fitness journey!",
-    });
 
-    console.log("Firestore user document created successfully!");
+  await setDoc(doc(db, "users", user.uid), {
+    name,
+    email,
+    bio: "Starting my fitness journey!",
+    country: "Canada",
+    profileImage: "" // initialize empty so profile doesn't break
+  });
 
-    // XP doc ONLY created on signup
-    await createUserXPDocument(user);
-  } catch (error) {
-    console.error("Error creating user document in Firestore:", error);
-  }
+  await createUserXPDocument(user);
 
   return user;
 }
 
 // -------------------------------------------------------------
-// IMPORTANT: Removed XP creation from auth listener!
-// This prevents XP from resetting on login.
-// -------------------------------------------------------------
-
-// ← This block was deleted:
-// onAuthStateChanged(auth, async (user) => {
-//   if (user) {
-//     await createUserXPDocument(user);
-//   }
-// });
-
-// -------------------------------------------------------------
-// logoutUser()
+// logout
 // -------------------------------------------------------------
 export async function logoutUser() {
   await signOut(auth);
@@ -100,17 +75,35 @@ export async function logoutUser() {
 }
 
 // -------------------------------------------------------------
-// checkAuthState()
+// SAFE auth-state handling (no infinite loops)
 // -------------------------------------------------------------
 export function checkAuthState() {
   onAuthStateChanged(auth, (user) => {
-    if (window.location.pathname.endsWith("main.html")) {
-      if (user) {
-        const displayName = user.displayName || user.email;
-        $("#welcomeMessage").text(`Hello, ${displayName}!`);
-      } else {
-        window.location.href = "index.html";
-      }
+
+    const path = window.location.pathname;
+
+    // pages that REQUIRE login
+    const protectedPages = [
+      "/dashboard.html",
+      "/main.html",
+      "/profile.html",
+      "/workout.html"
+    ];
+
+    const onProtectedPage = protectedPages.some((p) => path.endsWith(p));
+
+    if (onProtectedPage && !user) {
+      // user is not logged in but trying to access private page
+      window.location.href = "index.html";
+      return;
+    }
+
+    // If on login/signup and user IS logged in → redirect to dashboard
+    const authPages = ["/login.html", "/signup.html"];
+    const onAuthPage = authPages.some((p) => path.endsWith(p));
+
+    if (onAuthPage && user) {
+      window.location.href = "dashboard.html";
     }
   });
 }
@@ -123,7 +116,7 @@ export function onAuthReady(callback) {
 }
 
 // -------------------------------------------------------------
-// authErrorMessage(error)
+// authErrorMessage()
 // -------------------------------------------------------------
 export function authErrorMessage(error) {
   const code = (error?.code || "").toLowerCase();
