@@ -33,11 +33,7 @@
       <!-- Profile Image + Upload -->
       <div class="image d-flex flex-column justify-content-center align-items-center pt-3">
         <span class="border border-5 border-primary rounded-circle" style="cursor: pointer;">
-          <img id="profileImage"
-               class="rounded-circle"
-               height="120"
-               width="120"
-               alt="Profile Picture">
+          <img id="profileImage" class="rounded-circle" height="120" width="120" alt="Profile Picture">
         </span>
 
         <!-- Hidden image picker -->
@@ -50,11 +46,52 @@
         <h5 class="card-title mb-3">
           <span id="name-goes-here">Loading...</span>
         </h5>
+        <!-- Follow Button (hidden unless viewing another profile) -->
+        <button id="follow-btn" class="btn btn-primary w-50 mt-2 d-none">
+          Follow
+        </button>
+        <!-- FOLLOWERS + FOLLOWING CARDS -->
+        <div class="row g-3 mt-3 mb-3">
 
+          <!-- Followers Card -->
+          <div class="col-6">
+            <div class="card profile-card text-center p-2" id="followers-card">
+              <h6 class="fw-bold mb-0" id="followers-count">0</h6>
+              <small class="text-muted">Followers</small>
+            </div>
+          </div>
+
+          <!-- Following Card -->
+          <div class="col-6">
+            <div class="card profile-card text-center p-2" id="following-card">
+              <h6 class="fw-bold mb-0" id="following-count">0</h6>
+              <small class="text-muted">Following</small>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- LEVEL + XP -->
+        <div class="card p-3 mb-3 mx-auto w-100">
+          <p class="mb-2 text-center">
+            Lvl: <span id="level-goes-here">0</span>
+          </p>
+
+          <div class="progress position-relative">
+            <div id="myProgressBar" class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0"
+              aria-valuemax="100" style="width: 0%;">
+            </div>
+
+            <span id="progress-text" class="w-100 text-center position-absolute"
+              style="color: black; font-weight: bold;">
+              0%
+            </span>
+          </div>
+        </div>
         <!-- BADGES -->
         <div class="card p-3 mb-3 mx-auto w-100 position-relative">
           <span id="editBadgeButton" class="material-icons position-absolute"
-                style="top: 12px; right: 12px; cursor: pointer; color: #444; font-size: 22px;">
+            style="top: 12px; right: 12px; cursor: pointer; color: #444; font-size: 22px;">
             edit_square
           </span>
 
@@ -65,31 +102,11 @@
           </div>
         </div>
 
-        <!-- LEVEL + XP -->
-        <div class="card p-3 mb-3 mx-auto w-100">
-          <p class="mb-2 text-center">
-            Lvl: <span id="level-goes-here">0</span>
-          </p>
-
-          <div class="progress position-relative">
-            <div id="myProgressBar" class="progress-bar" role="progressbar"
-                 aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"
-                 style="width: 0%;">
-            </div>
-
-            <span id="progress-text"
-                  class="w-100 text-center position-absolute"
-                  style="color: black; font-weight: bold;">
-              0%
-            </span>
-          </div>
-        </div>
-
         <!-- BIO -->
         <div class="card p-3 mb-2 mx-auto w-100 position-relative">
 
           <span id="editBioButton" class="material-icons position-absolute"
-                style="top: 12px; right: 12px; cursor: pointer; color: #444; font-size: 22px;">
+            style="top: 12px; right: 12px; cursor: pointer; color: #444; font-size: 22px;">
             edit_square
           </span>
 
@@ -126,11 +143,34 @@
     </div>
   </div>
 
+  <!-- Followers/Following Modal -->
+  <div class="modal fade" id="followListModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="followListTitle">Users</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+
+        <div class="modal-body">
+          <ul id="followListContainer" class="list-group"></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Notification Container -->
+  <div id="notification-container" class="position-fixed top-0 start-50 translate-middle-x mt-3"
+    style="z-index: 2000; width: auto;">
+  </div>
+
   <site-footer></site-footer>
 
   <script type="module" src="./src/profile.js"></script>
   <script type="module" src="/src/firebaseConfig.js"></script>
   <script type="module" src="/src/authentication.js"></script>
+  <script type="module" src="/src/notification.js"></script>
 
 </body>
 
