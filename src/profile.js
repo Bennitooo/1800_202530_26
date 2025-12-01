@@ -12,7 +12,9 @@ import {
     getDoc,
     onSnapshot,
     arrayUnion,
-    arrayRemove
+    arrayRemove,
+    collection,
+    addDoc
 } from "firebase/firestore";
 import { onAuthReady } from "./authentication.js";
 import { onAuthStateChanged } from "firebase/auth";
@@ -292,57 +294,84 @@ function showProfile() {
             };
         }
 
-        // ====================================================================
-        // FOLLOW SYSTEM (FINAL FIXED VERSION)
-        // ====================================================================
-        async function setupFollowButton() {
-            if (!el.followBtn || viewingOwn) {
-                el.followBtn.classList.add("d-none");
-                return;
-            }
+// ====================================================================
+// FOLLOW SYSTEM with FEED EVENT CREATION
+// ====================================================================
+async function setupFollowButton() {
+    if (!el.followBtn || viewingOwn) {
+        el.followBtn.classList.add("d-none");
+        return;
+    }
 
-            // Make button visible
-            el.followBtn.classList.remove("d-none");
+    // Show button
+    el.followBtn.classList.remove("d-none");
 
-            const currentRef = doc(db, "users", user.uid);
-            const viewedRef = doc(db, "users", window.viewingProfileId);
+    const currentRef = doc(db, "users", user.uid);              // YOU (the follower)
+    const viewedRef = doc(db, "users", window.viewingProfileId); // Person you're viewing
 
-            const snap = await getDoc(currentRef);
-            const following = snap.data()?.following ?? [];
+    const snap = await getDoc(currentRef);
+    const following = snap.data()?.following ?? [];
 
-            let isFollowing =
-                following.includes(otherUID);
+    let isFollowing = following.includes(otherUID);
 
-            el.followBtn.textContent = isFollowing ? "Unfollow" : "Follow";
+    el.followBtn.textContent = isFollowing ? "Unfollow" : "Follow";
 
-            el.followBtn.onclick = async () => {
-                if (isFollowing) {
-                    await updateDoc(currentRef, {
-                        following: arrayRemove(otherUID)
-                    });
+    el.followBtn.onclick = async () => {
 
-                    await updateDoc(viewedRef, {
-                        followers: arrayRemove(user.uid)
-                    });
+        if (isFollowing) {
+            // --------------------------
+            // UNFOLLOW
+            // --------------------------
+            await updateDoc(currentRef, {
+                following: arrayRemove(otherUID)
+            });
 
-                    showNotification("Unfollowed user");
-                    el.followBtn.textContent = "Follow";
-                } else {
-                    await updateDoc(currentRef, {
-                        following: arrayUnion(otherUID)
-                    });
+            await updateDoc(viewedRef, {
+                followers: arrayRemove(user.uid)
+            });
 
-                    await updateDoc(viewedRef, {
-                        followers: arrayUnion(user.uid)
-                    });
+            showNotification("Unfollowed user");
+            el.followBtn.textContent = "Follow";
 
-                    showNotification("You are now following this user!");
-                    el.followBtn.textContent = "Unfollow";
-                }
+        } else {
+            // --------------------------
+            // FOLLOW
+            // --------------------------
+            await updateDoc(currentRef, {
+                following: arrayUnion(otherUID)
+            });
 
-                isFollowing = !isFollowing;
-            };
+            await updateDoc(viewedRef, {
+                followers: arrayUnion(user.uid)
+            });
+
+            // =========================================================
+            // CREATE FEED EVENT FOR THE USER WHO GOT FOLLOWED
+            // =========================================================
+            const eventsRef = collection(db, "feed", otherUID, "events");  
+            // ^ Event goes into THEIR feed (NOT yours)
+
+            const followerSnap = await getDoc(currentRef);
+            const followerData = followerSnap.data();
+
+            await addDoc(eventsRef, {
+                type: "follow",
+                followerId: user.uid,
+                followerName: followerData.name || "Unknown User",
+                followerImage: followerData.profileImage || null,
+                timestamp: Date.now()
+            });
+            // =========================================================
+
+            showNotification("You are now following this user!");
+            el.followBtn.textContent = "Unfollow";
         }
+
+        isFollowing = !isFollowing;
+    };
+}
+
+
 
         // IMPORTANT: call it here
         setupFollowButton();
