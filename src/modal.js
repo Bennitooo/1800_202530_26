@@ -2,7 +2,8 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import { Modal } from 'bootstrap';
 import { auth, db } from "./firebaseConfig.js";
 import { onAuthStateChanged } from "firebase/auth";
-import { collection, addDoc, serverTimestamp, query, where, orderBy, onSnapshot } from "firebase/firestore";
+import { collection, addDoc, setDoc, doc, serverTimestamp, query, where, orderBy, onSnapshot } from "firebase/firestore";
+import { showNotification } from "./notification.js";
 
 // ------------- helpers to render cards -------------
 function sessionCardHTML(docId, data) {
@@ -21,7 +22,7 @@ function sessionCardHTML(docId, data) {
         </div>
         </div>
     `;
-    }
+}
 
 function renderSessions(container, snapshot) {
     let html = "";
@@ -34,74 +35,93 @@ onAuthStateChanged(auth, (user) => {
     const listEl = document.getElementById("sessionsList");
 
     if (!user) {
-        listEl.innerHTML = `<p class="text-muted">Sign in to see your sessions.</p>`;
+        if (listEl) {
+            listEl.innerHTML = `<p class="text-muted">Sign in to see your sessions.</p>`;
+        }
         return;
     }
 
-  // Realtime listener for the current user's sessions
-    const q = query(
-        collection(db, "workoutSessions"),
-        where("uid", "==", user.uid),
-        orderBy("createdAt", "desc")
-    );
+    // Realtime listener for the current user's sessions
+    if (listEl) {
+        const q = query(
+            collection(db, "workoutSessions"),
+            where("uid", "==", user.uid),
+            orderBy("createdAt", "desc")
+        );
 
-    onSnapshot(q, (snap) => renderSessions(listEl, snap));
+        onSnapshot(q, (snap) => renderSessions(listEl, snap));
+    }
 });
 
 // ------------- create a session from the modal -------------
-document.getElementById("sessionForm").addEventListener("submit", async (e) => {
-    e.preventDefault();
-
-    const user = auth.currentUser;
-    if (!user) return alert("You must be signed in.");
-
-    const name = document.getElementById("sessionNameInput").value.trim();
-    const movement = document.getElementById("movementSelect").value;
-
-    if (!name) return alert("Please name your session.");
-
-    try {
-        await addDoc(collection(db, "workoutSessions"), {
-            uid: user.uid,
-            name,
-            movement,
-            createdAt: serverTimestamp(),
-            creatorName: user.displayName || user.email || "Anonymous",
-            isPublic: true,
-});
-
-    // clear inputs
-    e.target.reset();
-
-    // close the modal
-
-    const modalEl = document.getElementById("staticBackdrop");
-    if (modalEl) {
-    Modal.getOrCreateInstance(modalEl).hide(); // use Modal directly
-    }
-    } catch (err) {
-    console.error("Failed to create session:", err);
-    alert("Could not create session. Please try again.");
-    }
-});
-
-import { showNotification } from "./notification.js";
-
 document.addEventListener("DOMContentLoaded", () => {
     const form = document.getElementById("sessionForm");
 
-    form.addEventListener("submit", (e) => {
-        e.preventDefault();
+    if (form) {
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
 
-        // Close the modal
-        const modalEl = document.getElementById("staticBackdrop");
-        const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
-        modal.hide();
+            const user = auth.currentUser;
+            if (!user) {
+                alert("You must be signed in.");
+                return;
+            }
 
-        // Trigger notification
-        showNotification("Session Created!");
+            const name = document.getElementById("sessionNameInput").value.trim();
+            const movement = document.getElementById("movementSelect").value;
 
-        // Optional: reset the form
-        form.reset();
-    });
+            if (!name) {
+                alert("Please name your session.");
+                return;
+            }
+
+            try {
+                // Create the session document
+                const sessionRef = await addDoc(collection(db, "workoutSessions"), {
+                    uid: user.uid,
+                    name,
+                    movement,
+                    createdAt: serverTimestamp(),
+                    creatorName: user.displayName || user.email || "Anonymous",
+                    isPublic: true,
+                    isActive: true,
+                    endedAt: null,
+                });
+
+                console.log("Session created with ID:", sessionRef.id);
+
+                // Automatically add the creator as a participant
+                await setDoc(doc(db, "workoutSessions", sessionRef.id, "participants", user.uid), {
+                    name: user.displayName || user.email || "Anonymous",
+                    email: user.email || "",
+                    joinedAt: serverTimestamp(),
+                    uid: user.uid
+                });
+
+                console.log("Creator added as participant");
+
+                // Clear inputs
+                form.reset();
+
+                // Close the modal
+                const modalEl = document.getElementById("staticBackdrop");
+                if (modalEl) {
+                    const modal = Modal.getInstance(modalEl) || new Modal(modalEl);
+                    modal.hide();
+                }
+
+                // Trigger notification
+                showNotification("Session Created!");
+
+                // Redirect to the newly created session page
+                setTimeout(() => {
+                    window.location.href = `EachActiveSession.html?docID=${encodeURIComponent(sessionRef.id)}`;
+                }, 500);
+
+            } catch (err) {
+                console.error("Failed to create session:", err);
+                alert("Could not create session. Please try again.");
+            }
+        });
+    }
 });
