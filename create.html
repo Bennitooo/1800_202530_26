@@ -57,49 +57,41 @@
           </div>
 
           <!-- forms -->
-          <form id="sessionForm">
-            <div class="modal-body">
-              <div class="form-floating mb-3">
-                <input id="sessionNameInput" type="text" class="form-control" placeholder="My session" required>
-                <label for="sessionNameInput">Name your session</label>
-              </div>
+      <form id="sessionForm">
+        <div class="modal-body">
+          <div class="form-floating mb-3">
+            <input id="sessionNameInput" type="text" class="form-control" placeholder="My session" required>
+            <label for="sessionNameInput">Name your session</label>
+          </div>
 
-              <div class="form-floating mb-3">
-                <select id="movementSelect" class="form-select" required>
-                  <option value="Bench Press">Bench Press</option>
-                  <option value="Incline Bench Press">Incline Bench Press</option>
-                  <option value="Machine Flyes">Machine Flyes</option>
-                  <option value="Chest Dips">Chest Dips</option>
-                  <option value="Dumbbell Press">Dumbbell Press</option>
-                  <option value=""></option>
-                </select>
-                <label for="movementSelect">Pick a chest movement</label>
-              </div>
+          <div class="form-floating mb-3">
+            <select id="movementSelect" class="form-select" required>
+              <option value="Bench Press">Bench Press</option>
+              <option value="Incline Bench Press">Incline Bench Press</option>
+              <option value="Machine Flyes">Machine Flyes</option>
+              <option value="Chest Dips">Chest Dips</option>
+              <option value="Dumbbell Press">Dumbbell Press</option>
+            </select>
+            <label for="movementSelect">Pick a chest movement</label>
+          </div>
 
-              <!-- <div class="form-floating mb-3">
-                    <select id="movementSelect" class="form-select" required>
-                      <option value="Bench Press">Bench Press</option>
-                      <option value="Incline Bench Press">Incline Bench Press</option>
-                      <option value="Machine Flyes">Machine Flyes</option>
-                      <option value="Chest Dips">Chest Dips</option>
-                      <option value="Dumbbell Press">Dumbbell Press</option>
-                      <option value="None"></option>
-                    </select>
-                    <label for="movementSelect">Pick a chest movement</label>
-                  </div> -->
-            </div>
-            <!-- forms -->
-
-            <!-- buttons to create or close the modal -->
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-              <!-- submit the form -->
-              <button type="submit" class="btn btn-primary">Create</button>
-            </div>
-          </form>
+          <div class="alert alert-info mb-0">
+            <i class="material-icons align-middle" style="font-size: 1rem;">info</i>
+            <small>You can end this session anytime from the session details page.</small>
+          </div>
         </div>
-      </div>
+        <!-- forms -->
+
+        <!-- buttons to create or close the modal -->
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <!-- submit the form -->
+          <button type="submit" class="btn btn-primary">Create</button>
+        </div>
+      </form>
     </div>
+  </div>
+</div>
 
     <!-- Notification Container -->
     <div id="notification-container" class="position-fixed top-0 start-50 translate-middle-x mt-3"
