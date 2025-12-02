@@ -370,9 +370,6 @@ async function setupFollowButton() {
         isFollowing = !isFollowing;
     };
 }
-
-
-
         // IMPORTANT: call it here
         setupFollowButton();
     });
