@@ -8,44 +8,45 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <!-- Web Components for shared navbar and footer layout -->
+    <!-- Web Components -->
     <script type="module" src="/src/components/site-navbar.js"></script>
     <script type="module" src="/src/components/site-footer.js"></script>
 
-    <!-- Other libraries go here -->
+    <!-- Google & Icons -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <!-- Google Icons (Material Design)-->
-    <link
-        href="https://fonts.googleapis.com/icon?family=Material+Icons"
-        rel="stylesheet"
-    />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
 
-    <!-- Link to styles of your own -->
+    <!-- Custom styles -->
     <link rel="stylesheet" href="./styles/style.css" />
-    
-    </head>
-        <body>
-        <!------------------------------>
-        <!-- Your HTML Layout go here -->
-        <!------------------------------>
+  </head>
+
+  <body>
+
+    <!------------------------------>
+    <!-- Your HTML Layout go here -->
+    <!------------------------------>
 
     <!-- our own navbar goes here -->
     <site-navbar></site-navbar>
 
     <!-- Main content goes here -->
+    <div class="container py-4">
+      <h2 class="mb-4">Your Feed</h2>
+      <div id="feed-container" class="d-flex flex-column gap-3"></div>
+    </div>
 
     <!-- our own footer goes here -->
     <site-footer></site-footer>
 
     <!---------------------------------------------->
-    <!-- Your own JavaScript functions go here    -->
+    <!-- Your own JavaScript functions go here     -->
     <!---------------------------------------------->
 
-    <!-- Link to scripts of your own -->
     <script type="module" src="./src/main.js"></script>
-    <!-- Firebase and authentication related scripts -->
-    <!-- The order of loading matters -->
+    <script type="module" src="./src/socialfeed.js"></script>
+
+    <!-- Firebase scripts -->
     <script type="module" src="/src/firebaseConfig.js"></script>
     <script type="module" src="/src/authentication.js"></script>
     

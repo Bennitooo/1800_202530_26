@@ -1,51 +1,52 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <title>Home - FitQuest</title>
-    <meta name="comp1800 template" content="My 1800 App" />
 
-    <!-- Required meta tags -->
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+<head>
+  <title>Home - FitQuest</title>
+  <meta name="comp1800 template" content="My 1800 App" />
 
-    <!-- Web Components for shared navbar and footer layout -->
-    <script type="module" src="/src/components/site-navbar.js"></script>
-    <script type="module" src="/src/components/site-footer.js"></script>
+  <!-- Required meta tags -->
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <!-- Other libraries go here -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <!-- Google Icons (Material Design)-->
-    <link
-        href="https://fonts.googleapis.com/icon?family=Material+Icons"
-        rel="stylesheet"
-    />
+  <!-- Web Components for shared navbar and footer layout -->
+  <script type="module" src="/src/components/site-navbar.js"></script>
+  <script type="module" src="/src/components/site-footer.js"></script>
 
-    <!-- Link to styles of your own -->
-    <link rel="stylesheet" href="./styles/style.css" />
-    
-    </head>
-        <body>
-        <!------------------------------>
-        <!-- Your HTML Layout go here -->
-        <!------------------------------>
+  <!-- Other libraries go here -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <!-- Google Icons (Material Design)-->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
 
-    <!-- our own navbar goes here -->
-    <site-navbar></site-navbar>
+  <!-- Link to styles of your own -->
+  <link rel="stylesheet" href="./styles/style.css" />
 
-    <!-- Main content goes here -->
-    <div class="container-fluid bg-light text-dark p-5">
-      <div class="container bg-light p-5 text-center">
-        <h1 class="display-4">
-        Welcome <span id="name-goes-here">Summoner</span>
-        </h1>
-        <p>Quote of the day: <span id="quote-goes-here"></span></p>
-      </div>
+</head>
+
+<body>
+  <!------------------------------>
+  <!-- Your HTML Layout go here -->
+  <!------------------------------>
+
+  <!-- our own navbar goes here -->
+  <site-navbar></site-navbar>
+
+  <!-- Main content goes here -->
+  <div class="container py-5 d-flex flex-column gap-4">
+
+    <!-- Welcome Card -->
+    <div class="card p-5 text-center shadow-sm">
+      <h1 class="display-4">Welcome <span id="name-goes-here">Summoner</span></h1>
     </div>
-      </div>
+
+    <!-- Quote Card -->
+    <div class="card p-4 text-center shadow-sm">
+      <h3 class="mb-2">Motivational Quote</h3>
+      <p class="fs-5"><span id="quote-goes-here"></span></p>
     </div>
-  </div>
-  </div>
+
+
   </div>
   <!-- our own footer goes here -->
   <site-footer></site-footer>
