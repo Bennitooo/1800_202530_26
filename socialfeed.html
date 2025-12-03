@@ -1,54 +1,57 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <title>Socialfeed - FitQuest</title>
-    <meta name="comp1800 template" content="My 1800 App" />
 
-    <!-- Required meta tags -->
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+<head>
+  <title>Socialfeed - FitQuest</title>
+  <meta name="comp1800 template" content="My 1800 App" />
 
-    <!-- Web Components -->
-    <script type="module" src="/src/components/site-navbar.js"></script>
-    <script type="module" src="/src/components/site-footer.js"></script>
+  <!-- Required meta tags -->
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <!-- Google & Icons -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+  <!-- Web Components -->
+  <script type="module" src="/src/components/site-navbar.js"></script>
+  <script type="module" src="/src/components/site-footer.js"></script>
 
-    <!-- Custom styles -->
-    <link rel="stylesheet" href="./styles/style.css" />
-  </head>
+  <!-- Google & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
 
-  <body>
+  <!-- Custom styles -->
+  <link rel="stylesheet" href="./styles/style.css" />
+</head>
 
-    <!------------------------------>
-    <!-- Your HTML Layout go here -->
-    <!------------------------------>
+<body class="pb-5">
 
-    <!-- our own navbar goes here -->
-    <site-navbar></site-navbar>
+  <!------------------------------>
+  <!-- Your HTML Layout go here -->
+  <!------------------------------>
 
-    <!-- Main content goes here -->
-    <div class="container py-4">
-      <h2 class="mb-4">Your Feed</h2>
-      <div id="feed-container" class="d-flex flex-column gap-3"></div>
-    </div>
+  <!-- our own navbar goes here -->
+  <site-navbar></site-navbar>
 
-    <!-- our own footer goes here -->
-    <site-footer></site-footer>
+  <!-- Main content goes here -->
+  <div class="container py-4 mb-5">
+    <h2 class="mb-4">Your Feed</h2>
+    <div id="feed-container" class="d-flex flex-column gap-3"></div>
+  </div>
 
-    <!---------------------------------------------->
-    <!-- Your own JavaScript functions go here     -->
-    <!---------------------------------------------->
 
-    <script type="module" src="./src/main.js"></script>
-    <script type="module" src="./src/socialfeed.js"></script>
+  <!-- our own footer goes here -->
+  <site-footer></site-footer>
 
-    <!-- Firebase scripts -->
-    <script type="module" src="/src/firebaseConfig.js"></script>
-    <script type="module" src="/src/authentication.js"></script>
-    
-  </body>
+  <!---------------------------------------------->
+  <!-- Your own JavaScript functions go here     -->
+  <!---------------------------------------------->
+
+  <script type="module" src="./src/main.js"></script>
+  <script type="module" src="./src/socialfeed.js"></script>
+
+  <!-- Firebase scripts -->
+  <script type="module" src="/src/firebaseConfig.js"></script>
+  <script type="module" src="/src/authentication.js"></script>
+
+</body>
+
 </html>

@@ -1,456 +1,603 @@
-import { collection, doc, getDocs, setDoc, getDoc, deleteDoc, query, where, updateDoc, onSnapshot, writeBatch } from "firebase/firestore";
+// session.js — FINAL MERGED VERSION (neutral modals, stay-on-page behavior)
+// ====================================================================
+// IMPORTS
+// ====================================================================
+import {
+    collection,
+    doc,
+    getDocs,
+    getDoc,
+    setDoc,
+    deleteDoc,
+    updateDoc,
+    onSnapshot,
+    addDoc,
+    query,
+    where,
+    serverTimestamp,
+} from "firebase/firestore";
 import { auth, db } from "./firebaseConfig.js";
 import { onAuthStateChanged } from "firebase/auth";
-import { serverTimestamp } from "firebase/firestore";
+import { Modal } from "bootstrap";
+import { showNotification } from "./notification.js";
 
+
+// ====================================================================
+// GLOBALS & CACHE
+// ====================================================================
 let currentUser = null;
-let sessionData = null;
 let currentSessionId = null;
+let sessionData = null;
+let suppressSessionEndModal = false;
 
-// Get the document ID from the URL
-function getDocIdFromUrl() {
-    const params = new URL(window.location.href).searchParams;
-    const docID = params.get("docID");
-    console.log("Current URL:", window.location.href);
-    console.log("Document ID from URL:", docID);
-    return docID;
+
+const userProfileCache = new Map();
+
+// ====================================================================
+// HELPERS
+// ====================================================================
+function el(id) {
+    return document.getElementById(id);
 }
 
-// Check if user is already in ANY session
+function safeText(node, text) {
+    if (node) node.textContent = text;
+}
+
+function getDocIdFromUrl() {
+    return new URL(window.location.href).searchParams.get("docID");
+}
+
+// Safe HTML helper
+function escapeHtml(str = "") {
+    return String(str).replace(/[&<>"']/g, (s) => {
+        const map = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
+        return map[s];
+    });
+}
+
+// SAFELY FORMAT FIRESTORE TIMESTAMPS (supports Timestamp and plain seconds)
+function formatTimestamp(ts) {
+    if (!ts) return "Unknown";
+
+    if (typeof ts.toDate === "function") {
+        return ts.toDate().toLocaleString();
+    }
+
+    if (ts.seconds) {
+        return new Date(ts.seconds * 1000).toLocaleString();
+    }
+
+    const d = new Date(ts);
+    if (!isNaN(d.getTime())) return d.toLocaleString();
+
+    return "Unknown";
+}
+
+// Fetch user profile with caching
+async function fetchUserProfile(uid) {
+    if (!uid) return {};
+    if (userProfileCache.has(uid)) return userProfileCache.get(uid);
+
+    try {
+        const snap = await getDoc(doc(db, "users", uid));
+        const data = snap.exists() ? snap.data() : {};
+        userProfileCache.set(uid, data);
+        return data;
+    } catch (err) {
+        console.warn("fetchUserProfile error:", uid, err);
+        userProfileCache.set(uid, {});
+        return {};
+    }
+}
+
+async function fetchProfilesForIds(uids = []) {
+    const missing = uids.filter((id) => id && !userProfileCache.has(id));
+    await Promise.all(
+        missing.map(async (id) => {
+            try {
+                await fetchUserProfile(id);
+            } catch (e) {
+                console.warn("fetchProfilesForIds failed for", id, e);
+            }
+        })
+    );
+    return uids.map((id) => userProfileCache.get(id) || {});
+}
+
+// ====================================================================
+// PARTICIPANTS SYSTEM
+// ====================================================================
+function setupParticipantListener(sessionId) {
+    const ref = collection(db, "workoutSessions", sessionId, "participants");
+    return onSnapshot(
+        ref,
+        async () => {
+            console.log("Participants changed — refreshing list");
+            await displayParticipants(sessionId);
+        },
+        (err) => console.error("participants listener error", err)
+    );
+}
+
+async function displayParticipants(sessionId) {
+    try {
+        const participantsRef = collection(db, "workoutSessions", sessionId, "participants");
+        const participantsSnap = await getDocs(participantsRef);
+
+        const container = el("participantsList");
+        const activeUserCount = el("activeUserCount");
+
+        if (!container) return;
+
+        if (participantsSnap.empty) {
+            container.innerHTML = `
+        <div class="text-center text-muted py-4">
+          <i class="bi bi-person-x" style="font-size: 3rem;"></i>
+          <p class="mt-3 mb-0">No participants yet. Be the first to join!</p>
+        </div>`;
+            if (activeUserCount) activeUserCount.textContent = "0";
+            return;
+        }
+
+        const ids = participantsSnap.docs.map((d) => d.id);
+        await fetchProfilesForIds(ids);
+
+        // Get creator id
+        const sessionRef = doc(db, "workoutSessions", sessionId);
+        const sessionSnap = await getDoc(sessionRef);
+        const creatorId = sessionSnap.exists() ? sessionSnap.data().uid : null;
+
+        let html = `<div class="list-group list-group-flush">`;
+
+        for (const pDoc of participantsSnap.docs) {
+            const uid = pDoc.id;
+            const pData = pDoc.data();
+            const userData = userProfileCache.get(uid) || {};
+
+            const name = userData.username || pData.name || "Unknown";
+            const email = userData.email || pData.email || "";
+            const img = userData.profileImage ? `data:image/png;base64,${userData.profileImage}` : "/img/default.png";
+            const joinedTime = formatTimestamp(pData.joinedAt);
+            const isHost = uid === creatorId;
+
+            html += `
+        <div class="list-group-item participant-item" data-uid="${uid}" style="cursor:pointer;">
+          <div class="d-flex align-items-center">
+            <img src="${img}" class="rounded-circle border" width="48" height="48" style="object-fit:cover;">
+            <div class="ms-3">
+              <h6 class="mb-1">${escapeHtml(name)} ${isHost ? `<span class="badge bg-warning text-dark ms-2">Host</span>` : ""}</h6>
+              <p class="mb-0 small text-muted">${escapeHtml(email)}</p>
+              <p class="mb-0 small text-muted"><i class="bi bi-clock"></i> Joined: ${escapeHtml(joinedTime)}</p>
+            </div>
+          </div>
+        </div>`;
+        }
+
+        html += `</div>`;
+        container.innerHTML = html;
+
+        container.onclick = (e) => {
+            const item = e.target.closest(".participant-item");
+            if (!item) return;
+            const uid = item.getAttribute("data-uid");
+            if (uid) window.location.href = `profile.html?uid=${uid}`;
+        };
+
+        if (activeUserCount) activeUserCount.textContent = String(participantsSnap.size);
+    } catch (err) {
+        console.error("Error loading participants:", err);
+        const container = el("participantsList");
+        if (container) {
+            container.innerHTML = `
+        <div class="alert alert-danger m-3">
+          <i class="bi bi-exclamation-triangle"></i> Error loading participants.
+        </div>`;
+        }
+    }
+}
+
+// ====================================================================
+// SESSION MEMBERSHIP CHECKS
+// ====================================================================
 async function checkUserInAnySession(userId) {
     try {
-        console.log("Checking if user is in any session...");
-        
-        // Get all workout sessions
         const sessionsRef = collection(db, "workoutSessions");
-        const sessionsSnap = await getDocs(sessionsRef);
-        
-        // Check each session's participants subcollection
-        for (const sessionDoc of sessionsSnap.docs) {
-            const participantRef = doc(db, "workoutSessions", sessionDoc.id, "participants", userId);
-            const participantSnap = await getDoc(participantRef);
-            
-            if (participantSnap.exists()) {
-                console.log("User is already in session:", sessionDoc.id);
-                return {
-                    isInSession: true,
-                    sessionId: sessionDoc.id,
-                    sessionName: sessionDoc.data().name
-                };
-            }
-        }
-        
-        console.log("User is not in any session");
-        return { isInSession: false };
-        
-    } catch (error) {
-        console.error("Error checking user sessions:", error);
+        const activeQuery = query(sessionsRef, where("isActive", "==", true));
+        const sessionsSnap = await getDocs(activeQuery);
+
+        if (sessionsSnap.empty) return { isInSession: false };
+
+        // Check in parallel
+        const checks = await Promise.all(
+            sessionsSnap.docs.map(async (sDoc) => {
+                const sid = sDoc.id;
+                const pRef = doc(db, "workoutSessions", sid, "participants", userId);
+                const pSnap = await getDoc(pRef);
+                return { exists: pSnap.exists(), sid, name: sDoc.data().name };
+            })
+        );
+
+        const found = checks.find((c) => c.exists);
+        return found ? { isInSession: true, sessionId: found.sid, sessionName: found.name } : { isInSession: false };
+    } catch (err) {
+        console.error("checkUserInAnySession error:", err);
         return { isInSession: false };
     }
 }
 
-// Join the session - adds REAL user data automatically
+async function checkIfUserJoined(sessionId, userId) {
+    try {
+        const ref = doc(db, "workoutSessions", sessionId, "participants", userId);
+        const snap = await getDoc(ref);
+        return snap.exists();
+    } catch (err) {
+        console.error("checkIfUserJoined error:", err);
+        return false;
+    }
+}
+
+// ====================================================================
+// JOIN / EXIT SESSION
+// ====================================================================
 async function joinSession(sessionId, user) {
     try {
-        console.log("Joining session:", sessionId, "as user:", user.email);
-        
-        // First, check if session is still active
         const sessionRef = doc(db, "workoutSessions", sessionId);
         const sessionSnap = await getDoc(sessionRef);
-        
+
         if (!sessionSnap.exists()) {
-            alert("This session no longer exists.");
-            return;
+            // Show neutral session-ended modal if present
+            const modalEl = document.getElementById("sessionEndedModal");
+            if (modalEl) {
+                const modal = new Modal(modalEl);
+                modal.show();
+                return;
+            } else {
+                alert("Session no longer exists.");
+                return;
+            }
         }
-        
-        const sessionData = sessionSnap.data();
-        if (sessionData.isActive === false) {
-            alert("This session has ended. You cannot join an ended session.");
-            window.location.reload();
-            return;
+
+        const sData = sessionSnap.data();
+        if (!sData.isActive) {
+            const modalEl = document.getElementById("sessionEndedModal");
+            if (modalEl) {
+                const modal = new Modal(modalEl);
+                modal.show();
+                return;
+            } else {
+                alert("This session has ended.");
+                return;
+            }
         }
-        
-        // Check if user is already in another session
+
         const sessionCheck = await checkUserInAnySession(user.uid);
-        
         if (sessionCheck.isInSession && sessionCheck.sessionId !== sessionId) {
             alert(`You're already in another session: "${sessionCheck.sessionName}". Please leave that session first.`);
             return;
         }
-        
-        // This creates the participants subcollection automatically
+
         const participantRef = doc(db, "workoutSessions", sessionId, "participants", user.uid);
-        
         await setDoc(participantRef, {
             name: user.displayName || user.email || "Anonymous",
             email: user.email,
             joinedAt: serverTimestamp(),
             uid: user.uid
-        });
-        
-        console.log("Successfully joined session!");
-        
-        // Update UI
+        }, { merge: true });
+
         updateJoinButtonState(true, false);
-        
-        // Refresh the participants list
         await displayParticipants(sessionId);
-        
-    } catch (error) {
-        console.error("Error joining session:", error);
-        alert("Failed to join session: " + error.message);
+    } catch (err) {
+        console.error("joinSession error:", err);
+        alert("Failed to join session: " + (err.message || err));
     }
 }
 
-// Display all REAL participants who clicked "Join Session"
-async function displayParticipants(sessionId) {
-    try {
-        console.log("Loading participants for session:", sessionId);
-        
-        const participantsRef = collection(db, "workoutSessions", sessionId, "participants");
-        const participantsSnap = await getDocs(participantsRef);
-        
-        const participantsList = document.getElementById("participantsList");
-        const activeUserCount = document.getElementById("activeUserCount");
-        
-        if (participantsSnap.empty) {
-            participantsList.innerHTML = `
-                <div class="text-center text-muted py-4">
-                    <i class="bi bi-person-x" style="font-size: 3rem;"></i>
-                    <p class="mt-3 mb-0">No participants yet. Be the first to join!</p>
-                </div>`;
-            activeUserCount.textContent = "0";
-            return;
-        }
-        
-        // Build the participants list from REAL users
-        let html = '<div class="list-group list-group-flush">';
-        
-        participantsSnap.forEach((doc) => {
-            const participant = doc.data();
-            const joinedTime = participant.joinedAt?.toDate()?.toLocaleString() || "Just now";
-            
-            html += `
-                <div class="list-group-item">
-                    <div class="d-flex align-items-center">
-                        <div class="flex-shrink-0">
-                            <i class="bi bi-person-circle text-primary" style="font-size: 2.5rem;"></i>
-                        </div>
-                        <div class="flex-grow-1 ms-3">
-                            <h6 class="mb-1">${participant.name}</h6>
-                            <p class="mb-0 small text-muted">${participant.email}</p>
-                            <p class="mb-0 small text-muted">
-                                <i class="bi bi-clock"></i> Joined: ${joinedTime}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            `;
-        });
-        
-        html += '</div>';
-        participantsList.innerHTML = html;
-        
-        // Update active user count
-        activeUserCount.textContent = participantsSnap.size;
-        
-        console.log(`Displaying ${participantsSnap.size} participants`);
-        
-    } catch (error) {
-        console.error("Error loading participants:", error);
-        document.getElementById("participantsList").innerHTML = `
-            <div class="alert alert-danger m-3">
-                <i class="bi bi-exclamation-triangle"></i> Error loading participants: ${error.message}
-            </div>`;
-    }
-}
-
-// Check if current user has already joined THIS session
-async function checkIfUserJoined(sessionId, userId) {
-    try {
-        const participantRef = doc(db, "workoutSessions", sessionId, "participants", userId);
-        const participantSnap = await getDoc(participantRef);
-        const hasJoined = participantSnap.exists();
-        console.log("User has joined THIS session:", hasJoined);
-        return hasJoined;
-    } catch (error) {
-        console.error("Error checking user participation:", error);
-        return false;
-    }
-}
-
-// Exit/leave the session
 async function exitSession(sessionId, userId) {
     try {
-        console.log("Exiting session:", sessionId);
-        
         const participantRef = doc(db, "workoutSessions", sessionId, "participants", userId);
         await deleteDoc(participantRef);
-        
-        console.log("Left session successfully");
-        
-        // Redirect back to sessions list
         window.location.href = "session.html";
-        
-    } catch (error) {
-        console.error("Error leaving session:", error);
-        alert("Failed to leave session: " + error.message);
+    } catch (err) {
+        console.error("exitSession error:", err);
+        alert("Failed to leave session: " + (err.message || err));
     }
 }
 
-// Remove all participants from the session
-async function removeAllParticipants(sessionId) {
-    try {
-        console.log("Removing all participants from session:", sessionId);
-        
-        const participantsRef = collection(db, "workoutSessions", sessionId, "participants");
-        const participantsSnap = await getDocs(participantsRef);
-        
-        // Use batch to delete all participants at once
-        const batch = writeBatch(db);
-        
-        participantsSnap.forEach((participantDoc) => {
-            batch.delete(participantDoc.ref);
-        });
-        
-        await batch.commit();
-        
-        console.log(`Removed ${participantsSnap.size} participants from session`);
-        
-    } catch (error) {
-        console.error("Error removing participants:", error);
-        throw error;
-    }
-}
-
-// End the session (creator only)
+// ====================================================================
+// END SESSION — FEED EVENTS + XP SYSTEM (safe & fault tolerant)
+// ====================================================================
 async function endSession(sessionId) {
-    if (!sessionId) {
-        alert("Session ID not found");
-        return;
-    }
-
     try {
         const sessionRef = doc(db, "workoutSessions", sessionId);
-        
-        // First, remove all participants
-        await removeAllParticipants(sessionId);
-        console.log("All participants removed");
-        
-        // Then update session to inactive
+
+        // Get session + participants
+        const [sessionSnap, participantsSnap] = await Promise.all([
+            getDoc(sessionRef),
+            getDocs(collection(db, "workoutSessions", sessionId, "participants"))
+        ]);
+
+        if (!sessionSnap.exists()) return;
+
+        const sData = sessionSnap.data();
+        const creatorId = sData.uid;
+        const sessionName = sData.name || "Workout Session";
+        const participantIds = participantsSnap.docs.map(d => d.id);
+
+        // 1️⃣ Mark session ended (real-time listener handles UI)
         await updateDoc(sessionRef, {
             isActive: false,
-            endedAt: serverTimestamp(),
+            endedAt: serverTimestamp()
         });
 
-        console.log("Session ended successfully");
-        
-        alert("Session ended successfully! All participants have been removed.");
+        // 2️⃣ Collect followers
+        const followerPromises = participantIds.map(async (pid) => {
+            const fs = await getDocs(collection(db, "users", pid, "followers"));
+            return fs.docs.map(d => d.id);
+        });
 
-        // Redirect after a short delay
-        setTimeout(() => {
-            window.location.href = "session.html";
-        }, 1500);
+        const followerLists = await Promise.all(followerPromises);
+        let allFollowers = followerLists.flat();
 
-    } catch (error) {
-        console.error("Error ending session:", error);
-        alert("Failed to end session. Please try again.");
+        // Solo session → notify creator’s followers too
+        if (participantIds.length === 1) {
+            const creatorFollowersSnap = await getDocs(
+                collection(db, "users", creatorId, "followers")
+            );
+            allFollowers.push(...creatorFollowersSnap.docs.map(d => d.id));
+        }
+
+        const notifyIds = [...new Set([...participantIds, ...allFollowers])];
+
+        // 3️⃣ Creator profile
+        const creatorProfile = await fetchUserProfile(creatorId);
+        const creatorName =
+            creatorProfile.username ||
+            creatorProfile.displayName ||
+            (creatorProfile.email ? creatorProfile.email.split("@")[0] : "User");
+        const creatorImage = creatorProfile.profileImage || null;
+
+        // 4️⃣ Write feed events
+        await Promise.allSettled(
+            notifyIds.map(uid =>
+                addDoc(collection(db, "feed", uid, "events"), {
+                    type: "sessionEnded",
+                    sessionId,
+                    sessionName,
+                    creatorId,
+                    creatorName,
+                    creatorImage,
+                    participants: participantIds,
+                    endedBy: creatorId,
+                    timestamp: serverTimestamp()
+                })
+            )
+        );
+
+        // 5️⃣ XP + Level Logic
+        const rewardXP = participantIds.length === 1 ? 10 : 20;
+
+        await Promise.allSettled(
+            participantIds.map(async uid => {
+                const xpRef = doc(db, "usersXPsystem", uid);
+                const xpSnap = await getDoc(xpRef);
+
+                if (!xpSnap.exists()) {
+                    await setDoc(xpRef, { xp: rewardXP, level: 1 }, { merge: true });
+                    return;
+                }
+
+                const data = xpSnap.data();
+                let xp = data.xp ?? 0;
+                let level = data.level ?? 1;
+
+                xp += rewardXP;
+
+                while (xp >= 100) {
+                    xp -= 100;
+                    level += 1;
+                }
+
+                await updateDoc(xpRef, { xp, level });
+            })
+        );
+
+    } catch (err) {
+        console.error("endSession error:", err);
     }
 }
 
-// Update button states based on user role and session status
-function updateButtonStates(isCreator, isActive, hasJoinedSession) {
-    const joinBtn = document.getElementById("joinSessionBtn");
-    const exitBtn = document.getElementById("exitSessionBtn");
-    const endBtn = document.getElementById("endSessionBtn");
-    
-    // Hide all buttons first
+
+
+
+// ====================================================================
+// UI STATE MANAGEMENT
+// ====================================================================
+function updateButtonStates({ isCreator = false, isActive = true, hasJoined = false }) {
+    const joinBtn = el("joinSessionBtn");
+    const exitBtn = el("exitSessionBtn");
+    const endBtn = el("endSessionBtn");
+
     if (joinBtn) joinBtn.style.display = "none";
     if (exitBtn) exitBtn.style.display = "none";
     if (endBtn) endBtn.style.display = "none";
-    
+
     if (!isActive) {
-        // Session has ended - show ended state
-        const alertDiv = document.createElement('div');
-        alertDiv.className = "alert alert-danger mb-4";
-        alertDiv.innerHTML = `
-            <i class="bi bi-exclamation-circle"></i>
-            <strong>This session has ended.</strong> All participants have been removed. You can now join other sessions.
-            <a href="session.html" class="btn btn-sm btn-primary ms-2">View Active Sessions</a>
-        `;
-        
-        // Add alert if it doesn't exist
-        if (!document.querySelector('.alert-danger')) {
-            const mainContainer = document.querySelector('main.container');
-            const headerDiv = mainContainer.querySelector('.mb-4');
-            headerDiv.parentElement.insertBefore(alertDiv, headerDiv.nextSibling);
+        // mark ended visually
+        const header = el("workoutName");
+        if (header && sessionData) {
+            header.innerHTML = `${escapeHtml(sessionData.name || "Session")} <span class="badge bg-danger ms-2">Ended</span>`;
         }
-        
-        // Update title
-        const workoutName = document.getElementById("workoutName");
-        if (workoutName && sessionData) {
-            workoutName.innerHTML = `
-                ${sessionData.name || "Session"}
-                <span class="badge bg-danger ms-2">Ended</span>
-            `;
-        }
-    } else if (isCreator) {
-        // Creator sees "End Session" button
+        return;
+    }
+
+    if (isCreator) {
         if (endBtn) {
             endBtn.style.display = "inline-block";
-            endBtn.innerHTML = '<i class="bi bi-stop-circle"></i> End Session';
             endBtn.className = "btn btn-danger btn-lg";
             endBtn.disabled = false;
         }
-    } else if (hasJoinedSession) {
-        // Regular participant who has joined
+        return;
+    }
+
+    if (hasJoined) {
         if (joinBtn) {
             joinBtn.style.display = "inline-block";
-            joinBtn.innerHTML = '<i class="bi bi-check-circle"></i> Joined!';
             joinBtn.className = "btn btn-success btn-lg";
+            joinBtn.innerHTML = '<i class="bi bi-check-circle"></i> Joined!';
             joinBtn.disabled = true;
         }
-        if (exitBtn) {
-            exitBtn.style.display = "inline-block";
-        }
+        if (exitBtn) exitBtn.style.display = "inline-block";
     } else {
-        // Regular user who hasn't joined
         if (joinBtn) {
             joinBtn.style.display = "inline-block";
-            joinBtn.innerHTML = '<i class="bi bi-plus-circle"></i> Join Session';
             joinBtn.className = "btn btn-primary btn-lg";
+            joinBtn.innerHTML = '<i class="bi bi-plus-circle"></i> Join Session';
             joinBtn.disabled = false;
         }
     }
 }
 
-// Update join button state
 function updateJoinButtonState(hasJoined, inOtherSession) {
-    const joinBtn = document.getElementById("joinSessionBtn");
-    const exitBtn = document.getElementById("exitSessionBtn");
-    
+    const joinBtn = el("joinSessionBtn");
+    const exitBtn = el("exitSessionBtn");
+    if (!joinBtn) return;
+
     if (hasJoined) {
         joinBtn.innerHTML = '<i class="bi bi-check-circle"></i> Joined!';
         joinBtn.className = "btn btn-success btn-lg";
         joinBtn.disabled = true;
-        exitBtn.style.display = "inline-block";
+        if (exitBtn) exitBtn.style.display = "inline-block";
     } else if (inOtherSession) {
         joinBtn.innerHTML = '<i class="bi bi-lock-fill"></i> Already in Another Session';
         joinBtn.className = "btn btn-secondary btn-lg";
         joinBtn.disabled = true;
-        exitBtn.style.display = "none";
+        if (exitBtn) exitBtn.style.display = "none";
+    } else {
+        joinBtn.innerHTML = '<i class="bi bi-plus-circle"></i> Join Session';
+        joinBtn.className = "btn btn-primary btn-lg";
+        joinBtn.disabled = false;
+        if (exitBtn) exitBtn.style.display = "none";
     }
 }
 
-// Setup real-time listener for session updates
+// ====================================================================
+// SESSION LISTENER (neutral modal, do not redirect or kick)
+// ====================================================================
 function setupSessionListener(sessionId) {
     const sessionRef = doc(db, "workoutSessions", sessionId);
-    
-    onSnapshot(sessionRef, async (docSnap) => {
-        if (docSnap.exists()) {
-            const previousIsActive = sessionData?.isActive;
+
+    return onSnapshot(
+        sessionRef,
+        async (docSnap) => {
+            if (!docSnap.exists()) return;
+
+            const prevActive = sessionData?.isActive;
             sessionData = docSnap.data();
-            const currentIsActive = sessionData.isActive !== false;
-            
-            // If session just ended, check if current user was a participant
-            if (previousIsActive !== false && !currentIsActive && currentUser) {
-                const wasParticipant = await checkIfUserJoined(sessionId, currentUser.uid);
-                if (wasParticipant) {
-                    // User was in the session that just ended
-                    alert("This session has ended. You have been removed and can now join other sessions.");
-                    
-                    // Reload page to show updated state
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1000);
-                    return;
+            const isActive = sessionData.isActive !== false;
+
+            // Detect transition from active → ended
+            if (prevActive !== false && !isActive) {
+
+                // Show notification instead of the modal
+                showNotification("This session has ended.");
+
+                // Update header UI
+                const header = el("workoutName");
+                if (header) {
+                    header.innerHTML = `${escapeHtml(sessionData.name || "Session")}
+                        <span class="badge bg-danger ms-2">Ended</span>`;
                 }
+
+                // Disable action buttons
+                const joinBtn = el("joinSessionBtn");
+                const exitBtn = el("exitSessionBtn");
+                const endBtn = el("endSessionBtn");
+
+                if (joinBtn) joinBtn.style.display = "none";
+                if (exitBtn) exitBtn.style.display = "none";
+                if (endBtn) {
+                    endBtn.disabled = true;
+                    endBtn.classList.remove("btn-danger");
+                    endBtn.classList.add("btn-secondary");
+                    endBtn.textContent = "Session Ended";
+                }
+
+                return; // Stop processing after ending
             }
-            
-            const isCreator = currentUser && sessionData.uid === currentUser.uid;
-            const hasJoinedSession = currentUser ? await checkIfUserJoined(sessionId, currentUser.uid) : false;
-            
-            console.log("Session updated:", { isCreator, isActive: currentIsActive, hasJoinedSession });
-            
-            // Update button states
-            updateButtonStates(isCreator, currentIsActive, hasJoinedSession);
-            
-            // Refresh participants list
+
+            // Normal UI updates when session is active
+            const isCreator = currentUser?.uid === sessionData.uid;
+            const hasJoined = currentUser
+                ? await checkIfUserJoined(sessionId, currentUser.uid)
+                : false;
+
+            updateButtonStates({ isCreator, isActive, hasJoined });
             await displayParticipants(sessionId);
-        }
-    }, (error) => {
-        console.error("Error listening to session:", error);
-    });
+        },
+        (err) => console.error("session listener error", err)
+    );
 }
 
-// Main function to fetch and display everything
+
+// ====================================================================
+// INITIAL PAGE BOOTSTRAP (wires modals)
+// ====================================================================
 async function displayInfo() {
     const id = getDocIdFromUrl();
     currentSessionId = id;
-    
+
     if (!id) {
-        console.error("No document ID found in URL");
-        document.getElementById("workoutName").textContent = "No workout selected.";
-        document.getElementById("movementName").textContent = "Please select a workout session from the list.";
-        document.getElementById("participantsList").innerHTML = `
-            <div class="alert alert-warning m-3">
-                <i class="bi bi-exclamation-triangle"></i> No session ID provided in URL.
-            </div>`;
+        console.error("No document ID in URL");
+        safeText(el("workoutName"), "No workout selected.");
+        safeText(el("movementName"), "Please select a workout session from the list.");
+        if (el("participantsList")) el("participantsList").innerHTML = `<div class="alert alert-warning m-3"><i class="bi bi-exclamation-triangle"></i> No session ID provided in URL.</div>`;
         return;
     }
 
-    // Wait for authentication state
     onAuthStateChanged(auth, async (user) => {
-        if (user) {
-            currentUser = user;
-            console.log("Current user:", user.email);
-            
-            try {
-                // Get session details
-                const workoutRef = doc(db, "workoutSessions", id);
-                const workoutSnap = await getDoc(workoutRef);
-                
-                if (!workoutSnap.exists()) {
-                    console.error("Workout session not found");
-                    document.getElementById("workoutName").textContent = "Workout not found";
-                    document.getElementById("movementName").textContent = "This session may have been deleted.";
-                    document.getElementById("participantsList").innerHTML = `
-                        <div class="alert alert-danger m-3">
-                            <i class="bi bi-x-circle"></i> Session not found in database.
-                        </div>`;
-                    return;
-                }
-                
-                const workout = workoutSnap.data();
-                sessionData = workout;
-                
-                // Update page with session details
-                document.getElementById("workoutName").textContent = workout.name || "Unnamed Session";
-                document.getElementById("movementName").textContent = workout.movement || "No movement specified";
-                
-                console.log("Workout loaded:", workout);
-                
-                // Load participants
-                await displayParticipants(id);
-                
-                // Check user status
-                const isCreator = workout.uid === user.uid;
-                const isActive = workout.isActive !== false;
-                const sessionCheck = await checkUserInAnySession(user.uid);
-                const hasJoinedThisSession = await checkIfUserJoined(id, user.uid);
-                
-                console.log("User status:", { isCreator, isActive, hasJoinedThisSession, sessionCheck });
-                
-                // Setup real-time listener
-                setupSessionListener(id);
-                
-                // Setup button event listeners
-                const joinBtn = document.getElementById("joinSessionBtn");
-                const exitBtn = document.getElementById("exitSessionBtn");
-                const endBtn = document.getElementById("endSessionBtn");
-                
-                // Create End Session button if it doesn't exist
-                if (!endBtn && isCreator) {
+        if (!user) {
+            safeText(el("workoutName"), "Please log in");
+            safeText(el("movementName"), "You must be logged in to view this session.");
+            if (el("participantsList")) el("participantsList").innerHTML = `<div class="alert alert-info m-3"><i class="bi bi-info-circle"></i> Please log in to view and join this session.</div>`;
+            if (el("joinSessionBtn")) el("joinSessionBtn").style.display = "none";
+            if (el("exitSessionBtn")) el("exitSessionBtn").style.display = "none";
+            return;
+        }
+
+        currentUser = user;
+
+        try {
+            const workoutRef = doc(db, "workoutSessions", id);
+            const workoutSnap = await getDoc(workoutRef);
+
+            if (!workoutSnap.exists()) {
+                safeText(el("workoutName"), "Workout not found");
+                safeText(el("movementName"), "This session may have been deleted.");
+                if (el("participantsList")) el("participantsList").innerHTML = `<div class="alert alert-danger m-3"><i class="bi bi-x-circle"></i> Session not found in database.</div>`;
+                return;
+            }
+
+            const workout = workoutSnap.data();
+            sessionData = workout;
+
+            safeText(el("workoutName"), workout.name || "Unnamed Session");
+            safeText(el("movementName"), workout.movement || "No movement specified");
+
+            // Participants and listeners
+            await displayParticipants(id);
+            setupParticipantListener(id);
+            setupSessionListener(id);
+
+            const isCreator = workout.uid === user.uid;
+            const isActive = workout.isActive !== false;
+            const sessionCheck = await checkUserInAnySession(user.uid);
+            const hasJoinedThis = await checkIfUserJoined(id, user.uid);
+
+            // Ensure end button exists for creator (idempotent)
+            if (isCreator && !el("endSessionBtn")) {
+                const joinBtn = el("joinSessionBtn");
+                if (joinBtn && joinBtn.parentElement) {
                     const newEndBtn = document.createElement("button");
                     newEndBtn.type = "button";
                     newEndBtn.className = "btn btn-danger btn-lg ms-2";
@@ -458,81 +605,92 @@ async function displayInfo() {
                     newEndBtn.innerHTML = '<i class="bi bi-stop-circle"></i> End Session';
                     joinBtn.parentElement.appendChild(newEndBtn);
                 }
-                
-                // Add event listeners
-                if (joinBtn) {
-                    joinBtn.addEventListener("click", () => {
-                        joinSession(id, user);
-                    });
-                }
-                
-                if (exitBtn) {
-                    exitBtn.addEventListener("click", () => {
-                        if (confirm("Are you sure you want to leave this session?")) {
-                            exitSession(id, user.uid);
+            }
+
+            // Wire buttons (use modals where appropriate)
+            const joinBtn = el("joinSessionBtn");
+            const exitBtn = el("exitSessionBtn");
+            const endBtn = el("endSessionBtn");
+
+            if (joinBtn) {
+                joinBtn.onclick = () => joinSession(id, user);
+            }
+
+            if (exitBtn) {
+                exitBtn.onclick = () => {
+                    const modalEl = document.getElementById("leaveSessionModal");
+                    if (modalEl) {
+                        const modal = new Modal(modalEl);
+                        modal.show();
+                        // ensure handler is set fresh (avoid stacking)
+                        const btn = document.getElementById("confirmLeaveSessionBtn");
+                        if (btn) {
+                            btn.onclick = () => {
+                                modal.hide();
+                                exitSession(id, user.uid);
+                            };
                         }
-                    });
-                }
-                
-                const finalEndBtn = document.getElementById("endSessionBtn");
-                if (finalEndBtn) {
-                    finalEndBtn.addEventListener("click", () => {
-                        if (confirm("Are you sure you want to end this session? All participants will be removed and this cannot be undone.")) {
+                    } else {
+                        if (confirm("Are you sure you want to leave this session?")) exitSession(id, user.uid);
+                    }
+                };
+            }
+
+            if (endBtn) {
+                endBtn.onclick = () => {
+                    const modalEl = document.getElementById("endSessionModal");
+                    if (modalEl) {
+                        const modal = new Modal(modalEl);
+                        modal.show();
+
+                        const btn = document.getElementById("confirmEndSessionBtn");
+                        if (btn) {
+                            btn.onclick = async () => {
+                                btn.disabled = true;
+
+                                // End the session (NO notifications inside)
+                                await endSession(id);
+
+                                // Close modal
+                                modal.hide();
+
+                                // ❗ DO NOT set UI to ended
+                                // ❗ DO NOT show any notification here
+                                // ❗ The real-time listener handles everything
+
+                                btn.disabled = false;
+                            };
+                        }
+                    } else {
+                        // Fallback for no modal
+                        if (confirm("Are you sure you want to end this session? This cannot be undone.")) {
                             endSession(id);
                         }
-                    });
-                }
-                
-                // Initial button state update
-                updateButtonStates(isCreator, isActive, hasJoinedThisSession);
-                
-                // Handle "already in another session" case
-                if (!hasJoinedThisSession && sessionCheck.isInSession && !isCreator) {
-                    joinBtn.innerHTML = '<i class="bi bi-lock-fill"></i> Already in Another Session';
-                    joinBtn.className = "btn btn-secondary btn-lg";
-                    joinBtn.disabled = true;
-                    joinBtn.title = `You're already in "${sessionCheck.sessionName}". Leave that session first.`;
-                    
-                    exitBtn.style.display = "none";
-                    
-                    // Show info message
-                    const infoDiv = document.createElement('div');
-                    infoDiv.className = "alert alert-info mt-3";
-                    infoDiv.innerHTML = `
-                        <i class="bi bi-info-circle"></i>
-                        You're already in session: <strong>"${sessionCheck.sessionName}"</strong>. 
-                        Please leave that session before joining this one.
-                        <a href="EachActiveSession.html?docID=${sessionCheck.sessionId}" class="btn btn-sm btn-primary ms-2">
-                            Go to My Session
-                        </a>
-                    `;
-                    
-                    const buttonsDiv = joinBtn.parentElement;
-                    buttonsDiv.parentElement.insertBefore(infoDiv, buttonsDiv.nextSibling);
-                }
-                
-            } catch (error) {
-                console.error("Error loading workout:", error);
-                document.getElementById("workoutName").textContent = "Error loading workout";
-                document.getElementById("movementName").textContent = error.message;
-                document.getElementById("participantsList").innerHTML = `
-                    <div class="alert alert-danger m-3">
-                        <i class="bi bi-exclamation-triangle"></i> Error: ${error.message}
-                    </div>`;
+                    }
+                };
             }
-        } else {
-            // No user is signed in
-            console.error("No user logged in");
-            document.getElementById("workoutName").textContent = "Please log in";
-            document.getElementById("movementName").textContent = "You must be logged in to view this session.";
-            document.getElementById("participantsList").innerHTML = `
-                <div class="alert alert-info m-3">
-                    <i class="bi bi-info-circle"></i> Please log in to view and join this session.
-                </div>`;
-            
-            // Hide buttons
-            document.getElementById("joinSessionBtn").style.display = "none";
-            document.getElementById("exitSessionBtn").style.display = "none";
+
+
+
+            // Initial button states
+            updateButtonStates({ isCreator, isActive, hasJoined: hasJoinedThis });
+
+            // When user is in another session
+            if (!hasJoinedThis && sessionCheck.isInSession && !isCreator) {
+                updateJoinButtonState(false, true);
+
+                // show info message once
+                if (!document.querySelector(".already-in-session-info") && joinBtn && joinBtn.parentElement) {
+                    const infoDiv = document.createElement("div");
+                    infoDiv.className = "alert alert-info mt-3 already-in-session-info";
+                    infoDiv.innerHTML = `<i class="bi bi-info-circle"></i> You're already in session: <strong>"${escapeHtml(sessionCheck.sessionName)}"</strong>. Please leave that session before joining this one.
+            <a href="EachActiveSession.html?docID=${encodeURIComponent(sessionCheck.sessionId)}" class="btn btn-sm btn-primary ms-2">Go to My Session</a>`;
+                    joinBtn.parentElement.parentElement.insertBefore(infoDiv, joinBtn.parentElement.nextSibling);
+                }
+            }
+        } catch (err) {
+            console.error("displayInfo error:", err);
+            alert("Error loading session: " + (err.message || err));
         }
     });
 }
