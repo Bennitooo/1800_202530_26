@@ -40,6 +40,9 @@ FitQuest is a minimalistic, gamified fitness app designed to support the growing
 
 ```
 project-name/
+├── fonts/
+├── images/
+├── node_modules/...
 ├── src/
 │ ├── components/
 │ │ ├── site-footer.js
@@ -55,8 +58,7 @@ project-name/
 │ ├── sessionsList.js
 │ └── socialfeed.js
 ├── styles/
-├── fonts/
-├── images/
+│   ├── style.css
 ├── .env
 ├── .gitignore
 ├── create.html
@@ -76,8 +78,8 @@ project-name/
 
 ## Contributors
 
-- **Bennett Lazarro** 
-- **Ryan Guan** 
+- **Bennett Lazarro**
+- **Ryan Guan**
 - **Niels van Atten**-
 
 ---
@@ -86,7 +88,7 @@ project-name/
 
 - Icons sourced from [Bootstrap](https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css) and [Google Icons](https://fonts.googleapis.com/icon?family=Material+Icons)
 - We used [Claude](https://claude.ai/new) and [ChatGPT](https://chatgpt.com) to help us create
-and debug our JavaScript files
+  and debug our JavaScript files
 
 ---
 
