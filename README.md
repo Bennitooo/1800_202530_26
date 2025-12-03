@@ -80,7 +80,7 @@ project-name/
 
 - **Bennett Lazarro**
 - **Ryan Guan**
-- **Niels van Atten**-
+- **Niels van Atten**
 
 ---
 
