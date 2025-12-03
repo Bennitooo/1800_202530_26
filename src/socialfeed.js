@@ -35,7 +35,7 @@ function createFollowCard(event) {
     card.innerHTML = `
         <div class="d-flex align-items-center gap-3">
             <img src="${imgSrc}" class="rounded-circle"
-                 style="width:50px;height:50px;object-fit:cover;">
+                style="width:50px;height:50px;object-fit:cover;">
 
             <div>
                 <h6 class="mb-1">
