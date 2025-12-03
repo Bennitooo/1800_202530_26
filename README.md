@@ -38,24 +38,26 @@ FitQuest is a minimalistic, gamified fitness app designed to support the growing
 
 ## Project Structure
 
+```
 project-name/
 ├── src/
-│   ├── components/
-│   │   ├── site-footer.js
-│   │   └── site-navbar.js
-│   ├── authentication.js
-│   ├── EachActiveSession.js
-│   ├── firebaseConfig.js
-│   ├── loginSignup.js
-│   ├── main.js
-│   ├── modal.js
-│   ├── notification.js
-│   ├── profile.js
-│   ├── sessionsList.js
-│   └── socialfeed.js
+│ ├── components/
+│ │ ├── site-footer.js
+│ │ └── site-navbar.js
+│ ├── authentication.js
+│ ├── EachActiveSession.js
+│ ├── firebaseConfig.js
+│ ├── loginSignup.js
+│ ├── main.js
+│ ├── modal.js
+│ ├── notification.js
+│ ├── profile.js
+│ ├── sessionsList.js
+│ └── socialfeed.js
 ├── styles/
 ├── fonts/
 ├── images/
+├── .env
 ├── .gitignore
 ├── create.html
 ├── EachActiveSession.html
@@ -67,25 +69,29 @@ project-name/
 ├── profile.html
 ├── README.md
 ├── session.html
-├── skeleton.html
 └── socialfeed.html
+```
 
 ---
 
 ## Contributors
-- **Bennett Lazarro** - BCIT CST Student with a passion for creating user-friendly applications. Fun fact: Knows how to dance Standing Next To You and 3D by Jungkook.
-- **Ryan Guan** - BCIT CST Student, 🥀 Fun fact: I can't count to 10.
-- **Niels van Atten**- BCIT student who loves learning new things. Fun fact: I have sat in a Ford GT.
+
+- **Bennett Lazarro** 
+- **Ryan Guan** 
+- **Niels van Atten**-
 
 ---
 
 ## Acknowledgments
 
 - Icons sourced from [Bootstrap](https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css) and [Google Icons](https://fonts.googleapis.com/icon?family=Material+Icons)
+- We used [Claude](https://claude.ai/new) and [ChatGPT](https://chatgpt.com) to help us create
+and debug our JavaScript files
 
 ---
 
 ## Limitations and Future Work
+
 ### Limitations
 
 - The user interface can be improved for better accesibility.
