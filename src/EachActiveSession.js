@@ -246,7 +246,6 @@ async function joinSession(sessionId, user) {
         const sessionSnap = await getDoc(sessionRef);
 
         if (!sessionSnap.exists()) {
-            // Show neutral session-ended modal if present
             const modalEl = document.getElementById("sessionEndedModal");
             if (modalEl) {
                 const modal = new Modal(modalEl);
@@ -271,12 +270,14 @@ async function joinSession(sessionId, user) {
             }
         }
 
+        // Check if user already in another session
         const sessionCheck = await checkUserInAnySession(user.uid);
         if (sessionCheck.isInSession && sessionCheck.sessionId !== sessionId) {
             alert(`You're already in another session: "${sessionCheck.sessionName}". Please leave that session first.`);
             return;
         }
 
+        // Add participant
         const participantRef = doc(db, "workoutSessions", sessionId, "participants", user.uid);
         await setDoc(participantRef, {
             name: user.displayName || user.email || "Anonymous",
@@ -284,6 +285,9 @@ async function joinSession(sessionId, user) {
             joinedAt: serverTimestamp(),
             uid: user.uid
         }, { merge: true });
+
+        // 🔥 FIX HERE — Mark user as “in this session”
+        await updateDoc(doc(db, "users", user.uid), { currentSessionId: sessionId });
 
         updateJoinButtonState(true, false);
         await displayParticipants(sessionId);
@@ -293,16 +297,22 @@ async function joinSession(sessionId, user) {
     }
 }
 
+
 async function exitSession(sessionId, userId) {
     try {
+        // Remove participant
         const participantRef = doc(db, "workoutSessions", sessionId, "participants", userId);
         await deleteDoc(participantRef);
+
+        await updateDoc(doc(db, "users", userId), { currentSessionId: null });
+
         window.location.href = "session.html";
     } catch (err) {
         console.error("exitSession error:", err);
         alert("Failed to leave session: " + (err.message || err));
     }
 }
+
 
 // ====================================================================
 // END SESSION — FEED EVENTS + XP SYSTEM (safe & fault tolerant)
@@ -311,12 +321,13 @@ async function endSession(sessionId) {
     try {
         const sessionRef = doc(db, "workoutSessions", sessionId);
 
-        // Get session + participants
+        // ---------------------------------------------------------
+        // 1) Fetch session + participants
+        // ---------------------------------------------------------
         const [sessionSnap, participantsSnap] = await Promise.all([
             getDoc(sessionRef),
             getDocs(collection(db, "workoutSessions", sessionId, "participants"))
         ]);
-
         if (!sessionSnap.exists()) return;
 
         const sData = sessionSnap.data();
@@ -324,32 +335,38 @@ async function endSession(sessionId) {
         const sessionName = sData.name || "Workout Session";
         const participantIds = participantsSnap.docs.map(d => d.id);
 
-        // 1️⃣ Mark session ended (real-time listener handles UI)
+        // ---------------------------------------------------------
+        // 2) Mark session ended
+        // ---------------------------------------------------------
         await updateDoc(sessionRef, {
             isActive: false,
             endedAt: serverTimestamp()
         });
 
-        // 2️⃣ Collect followers
-        const followerPromises = participantIds.map(async (pid) => {
-            const fs = await getDocs(collection(db, "users", pid, "followers"));
-            return fs.docs.map(d => d.id);
-        });
+        // ---------------------------------------------------------
+        // 3) Fetch followers efficiently (array fields, NOT subcollections)
+        // ---------------------------------------------------------
+        const userDocs = await Promise.all(
+            participantIds.map(pid => getDoc(doc(db, "users", pid)))
+        );
 
-        const followerLists = await Promise.all(followerPromises);
+        const followerLists = userDocs.map(s => (s.exists() ? s.data().followers ?? [] : []));
         let allFollowers = followerLists.flat();
 
-        // Solo session → notify creator’s followers too
+        // Solo session → also include creator's followers
         if (participantIds.length === 1) {
-            const creatorFollowersSnap = await getDocs(
-                collection(db, "users", creatorId, "followers")
-            );
-            allFollowers.push(...creatorFollowersSnap.docs.map(d => d.id));
+            const creatorSnap = await getDoc(doc(db, "users", creatorId));
+            if (creatorSnap.exists()) {
+                allFollowers.push(...(creatorSnap.data().followers ?? []));
+            }
         }
 
+        // Everyone who gets notified (participants + their followers)
         const notifyIds = [...new Set([...participantIds, ...allFollowers])];
 
-        // 3️⃣ Creator profile
+        // ---------------------------------------------------------
+        // 4) Fetch creator’s profile ONCE
+        // ---------------------------------------------------------
         const creatorProfile = await fetchUserProfile(creatorId);
         const creatorName =
             creatorProfile.username ||
@@ -357,24 +374,38 @@ async function endSession(sessionId) {
             (creatorProfile.email ? creatorProfile.email.split("@")[0] : "User");
         const creatorImage = creatorProfile.profileImage || null;
 
-        // 4️⃣ Write feed events
+        // ---------------------------------------------------------
+        // 5) Write feed events in parallel (settled = safe)
+        // ---------------------------------------------------------
+        const feedEvent = {
+            type: "sessionEnded",
+            sessionId,
+            sessionName,
+            creatorId,
+            creatorName,
+            creatorImage,
+            participants: participantIds,
+            endedBy: creatorId,
+            timestamp: serverTimestamp()
+        };
+
         await Promise.allSettled(
             notifyIds.map(uid =>
-                addDoc(collection(db, "feed", uid, "events"), {
-                    type: "sessionEnded",
-                    sessionId,
-                    sessionName,
-                    creatorId,
-                    creatorName,
-                    creatorImage,
-                    participants: participantIds,
-                    endedBy: creatorId,
-                    timestamp: serverTimestamp()
-                })
+                addDoc(collection(db, "feed", uid, "events"), feedEvent)
             )
         );
 
-        // 5️⃣ XP + Level Logic
+        // Clear currentSessionId for ALL participants
+        await Promise.allSettled(
+            participantIds.map(uid =>
+                updateDoc(doc(db, "users", uid), { currentSessionId: null })
+            )
+        );
+
+
+        // ---------------------------------------------------------
+        // 6) XP / LEVEL logic — only 1 read per user
+        // ---------------------------------------------------------
         const rewardXP = participantIds.length === 1 ? 10 : 20;
 
         await Promise.allSettled(
@@ -383,14 +414,10 @@ async function endSession(sessionId) {
                 const xpSnap = await getDoc(xpRef);
 
                 if (!xpSnap.exists()) {
-                    await setDoc(xpRef, { xp: rewardXP, level: 1 }, { merge: true });
-                    return;
+                    return setDoc(xpRef, { xp: rewardXP, level: 1 }, { merge: true });
                 }
 
-                const data = xpSnap.data();
-                let xp = data.xp ?? 0;
-                let level = data.level ?? 1;
-
+                let { xp = 0, level = 1 } = xpSnap.data();
                 xp += rewardXP;
 
                 while (xp >= 100) {
@@ -398,7 +425,7 @@ async function endSession(sessionId) {
                     level += 1;
                 }
 
-                await updateDoc(xpRef, { xp, level });
+                return updateDoc(xpRef, { xp, level });
             })
         );
 
@@ -406,6 +433,7 @@ async function endSession(sessionId) {
         console.error("endSession error:", err);
     }
 }
+
 
 
 
