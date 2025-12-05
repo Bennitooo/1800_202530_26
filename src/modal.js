@@ -1,3 +1,4 @@
+// Firebase Authentication helper functions
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { Modal } from 'bootstrap';
 import { auth, db } from "./firebaseConfig.js";
@@ -5,7 +6,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { collection, addDoc, getDoc, setDoc, doc, serverTimestamp, query, where, orderBy, onSnapshot } from "firebase/firestore";
 import { showNotification } from "./notification.js";
 
-// ------------- helpers to render cards -------------
+// Helpers to render cards
 function sessionCardHTML(docId, data) {
     const created = data.createdAt?.toDate
         ? data.createdAt.toDate().toLocaleString()
@@ -24,13 +25,14 @@ function sessionCardHTML(docId, data) {
     `;
 }
 
+// Render the sessions
 function renderSessions(container, snapshot) {
     let html = "";
     snapshot.forEach(doc => (html += sessionCardHTML(doc.id, doc.data())));
     container.innerHTML = html || `<p class="text-muted">No sessions yet.</p>`;
 }
 
-// ------------- auth gate + listeners -------------
+// Authentication gate and listeners
 onAuthStateChanged(auth, (user) => {
     const listEl = document.getElementById("sessionsList");
 
@@ -53,7 +55,7 @@ onAuthStateChanged(auth, (user) => {
     }
 });
 
-// ------------- create a session from the modal -------------
+// Create session from modal
 document.addEventListener("DOMContentLoaded", () => {
     const form = document.getElementById("sessionForm");
 
@@ -98,7 +100,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 console.log("Session created with ID:", sessionRef.id);
 
                 // Automatically add the creator as a participant
-                // Automatically add the creator as a participant
                 await setDoc(doc(db, "workoutSessions", sessionRef.id, "participants", user.uid), {
                     name: user.displayName || user.email || "Anonymous",
                     email: user.email || "",
@@ -108,7 +109,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 console.log("Creator added as participant");
 
-                // 🔥 Mark user as 'in a session'
+                // Mark user as 'in a session'
                 await setDoc(userRef, { currentSessionId: sessionRef.id }, { merge: true });
 
                 // Clear inputs

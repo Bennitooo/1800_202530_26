@@ -1,7 +1,4 @@
-// session.js — FINAL MERGED VERSION (neutral modals, stay-on-page behavior)
-// ====================================================================
-// IMPORTS
-// ====================================================================
+// Firebase Authentication helper functions
 import {
     collection,
     doc,
@@ -21,21 +18,12 @@ import { onAuthStateChanged } from "firebase/auth";
 import { Modal } from "bootstrap";
 import { showNotification } from "./notification.js";
 
-
-// ====================================================================
-// GLOBALS & CACHE
-// ====================================================================
+// Global Variables
 let currentUser = null;
-let currentSessionId = null;
 let sessionData = null;
-let suppressSessionEndModal = false;
-
-
 const userProfileCache = new Map();
 
-// ====================================================================
-// HELPERS
-// ====================================================================
+// Helper Methods
 function el(id) {
     return document.getElementById(id);
 }
@@ -56,7 +44,7 @@ function escapeHtml(str = "") {
     });
 }
 
-// SAFELY FORMAT FIRESTORE TIMESTAMPS (supports Timestamp and plain seconds)
+// Firestore Timestamp formatting
 function formatTimestamp(ts) {
     if (!ts) return "Unknown";
 
@@ -105,9 +93,8 @@ async function fetchProfilesForIds(uids = []) {
     return uids.map((id) => userProfileCache.get(id) || {});
 }
 
-// ====================================================================
-// PARTICIPANTS SYSTEM
-// ====================================================================
+
+// Participant Listener
 function setupParticipantListener(sessionId) {
     const ref = collection(db, "workoutSessions", sessionId, "participants");
     return onSnapshot(
@@ -197,9 +184,7 @@ async function displayParticipants(sessionId) {
     }
 }
 
-// ====================================================================
-// SESSION MEMBERSHIP CHECKS
-// ====================================================================
+// Session Membership Check
 async function checkUserInAnySession(userId) {
     try {
         const sessionsRef = collection(db, "workoutSessions");
@@ -226,6 +211,7 @@ async function checkUserInAnySession(userId) {
     }
 }
 
+// User Join Check
 async function checkIfUserJoined(sessionId, userId) {
     try {
         const ref = doc(db, "workoutSessions", sessionId, "participants", userId);
@@ -237,9 +223,7 @@ async function checkIfUserJoined(sessionId, userId) {
     }
 }
 
-// ====================================================================
-// JOIN / EXIT SESSION
-// ====================================================================
+// Join Session function
 async function joinSession(sessionId, user) {
     try {
         const sessionRef = doc(db, "workoutSessions", sessionId);
@@ -286,7 +270,7 @@ async function joinSession(sessionId, user) {
             uid: user.uid
         }, { merge: true });
 
-        // 🔥 FIX HERE — Mark user as “in this session”
+        // Mark user as “in this session”
         await updateDoc(doc(db, "users", user.uid), { currentSessionId: sessionId });
 
         updateJoinButtonState(true, false);
@@ -296,7 +280,6 @@ async function joinSession(sessionId, user) {
         alert("Failed to join session: " + (err.message || err));
     }
 }
-
 
 async function exitSession(sessionId, userId) {
     try {
@@ -313,17 +296,12 @@ async function exitSession(sessionId, userId) {
     }
 }
 
-
-// ====================================================================
-// END SESSION — FEED EVENTS + XP SYSTEM (safe & fault tolerant)
-// ====================================================================
+// End Session Function, Sorry Carly
 async function endSession(sessionId) {
     try {
         const sessionRef = doc(db, "workoutSessions", sessionId);
 
-        // ---------------------------------------------------------
-        // 1) Fetch session + participants
-        // ---------------------------------------------------------
+        // Fetch session and participants
         const [sessionSnap, participantsSnap] = await Promise.all([
             getDoc(sessionRef),
             getDocs(collection(db, "workoutSessions", sessionId, "participants"))
@@ -335,17 +313,13 @@ async function endSession(sessionId) {
         const sessionName = sData.name || "Workout Session";
         const participantIds = participantsSnap.docs.map(d => d.id);
 
-        // ---------------------------------------------------------
-        // 2) Mark session ended
-        // ---------------------------------------------------------
+        // Mark session ended
         await updateDoc(sessionRef, {
             isActive: false,
             endedAt: serverTimestamp()
         });
 
-        // ---------------------------------------------------------
-        // 3) Fetch followers efficiently (array fields, NOT subcollections)
-        // ---------------------------------------------------------
+        // Fetch followers efficiently
         const userDocs = await Promise.all(
             participantIds.map(pid => getDoc(doc(db, "users", pid)))
         );
@@ -353,7 +327,7 @@ async function endSession(sessionId) {
         const followerLists = userDocs.map(s => (s.exists() ? s.data().followers ?? [] : []));
         let allFollowers = followerLists.flat();
 
-        // Solo session → also include creator's followers
+        // Solo session
         if (participantIds.length === 1) {
             const creatorSnap = await getDoc(doc(db, "users", creatorId));
             if (creatorSnap.exists()) {
@@ -364,9 +338,7 @@ async function endSession(sessionId) {
         // Everyone who gets notified (participants + their followers)
         const notifyIds = [...new Set([...participantIds, ...allFollowers])];
 
-        // ---------------------------------------------------------
-        // 4) Fetch creator’s profile ONCE
-        // ---------------------------------------------------------
+        // Fetch creator’s profile
         const creatorProfile = await fetchUserProfile(creatorId);
         const creatorName =
             creatorProfile.username ||
@@ -374,9 +346,7 @@ async function endSession(sessionId) {
             (creatorProfile.email ? creatorProfile.email.split("@")[0] : "User");
         const creatorImage = creatorProfile.profileImage || null;
 
-        // ---------------------------------------------------------
-        // 5) Write feed events in parallel (settled = safe)
-        // ---------------------------------------------------------
+        // Write feed events in parallel (settled = safe)
         const feedEvent = {
             type: "sessionEnded",
             sessionId,
@@ -402,10 +372,7 @@ async function endSession(sessionId) {
             )
         );
 
-
-        // ---------------------------------------------------------
-        // 6) XP / LEVEL logic — only 1 read per user
-        // ---------------------------------------------------------
+        // XP / Leveling logic 
         const rewardXP = participantIds.length === 1 ? 10 : 20;
 
         await Promise.allSettled(
@@ -434,13 +401,7 @@ async function endSession(sessionId) {
     }
 }
 
-
-
-
-
-// ====================================================================
-// UI STATE MANAGEMENT
-// ====================================================================
+// Ui State Management
 function updateButtonStates({ isCreator = false, isActive = true, hasJoined = false }) {
     const joinBtn = el("joinSessionBtn");
     const exitBtn = el("exitSessionBtn");
@@ -451,7 +412,6 @@ function updateButtonStates({ isCreator = false, isActive = true, hasJoined = fa
     if (endBtn) endBtn.style.display = "none";
 
     if (!isActive) {
-        // mark ended visually
         const header = el("workoutName");
         if (header && sessionData) {
             header.innerHTML = `${escapeHtml(sessionData.name || "Session")} <span class="badge bg-danger ms-2">Ended</span>`;
@@ -486,6 +446,7 @@ function updateButtonStates({ isCreator = false, isActive = true, hasJoined = fa
     }
 }
 
+// Join Button Toggle
 function updateJoinButtonState(hasJoined, inOtherSession) {
     const joinBtn = el("joinSessionBtn");
     const exitBtn = el("exitSessionBtn");
@@ -509,9 +470,7 @@ function updateJoinButtonState(hasJoined, inOtherSession) {
     }
 }
 
-// ====================================================================
-// SESSION LISTENER (neutral modal, do not redirect or kick)
-// ====================================================================
+// Session Listener
 function setupSessionListener(sessionId) {
     const sessionRef = doc(db, "workoutSessions", sessionId);
 
@@ -524,12 +483,9 @@ function setupSessionListener(sessionId) {
             sessionData = docSnap.data();
             const isActive = sessionData.isActive !== false;
 
-            // Detect transition from active → ended
+            // Detect transition from active to ended
             if (prevActive !== false && !isActive) {
-
-                // Show notification instead of the modal
                 showNotification("This session has ended.");
-
                 // Update header UI
                 const header = el("workoutName");
                 if (header) {
@@ -551,7 +507,7 @@ function setupSessionListener(sessionId) {
                     endBtn.textContent = "Session Ended";
                 }
 
-                return; // Stop processing after ending
+                return;
             }
 
             // Normal UI updates when session is active
@@ -567,10 +523,7 @@ function setupSessionListener(sessionId) {
     );
 }
 
-
-// ====================================================================
-// INITIAL PAGE BOOTSTRAP (wires modals)
-// ====================================================================
+// Intial page bootstrap
 async function displayInfo() {
     const id = getDocIdFromUrl();
     currentSessionId = id;
@@ -622,7 +575,7 @@ async function displayInfo() {
             const sessionCheck = await checkUserInAnySession(user.uid);
             const hasJoinedThis = await checkIfUserJoined(id, user.uid);
 
-            // Ensure end button exists for creator (idempotent)
+            // Creator End Button
             if (isCreator && !el("endSessionBtn")) {
                 const joinBtn = el("joinSessionBtn");
                 if (joinBtn && joinBtn.parentElement) {
@@ -650,7 +603,6 @@ async function displayInfo() {
                     if (modalEl) {
                         const modal = new Modal(modalEl);
                         modal.show();
-                        // ensure handler is set fresh (avoid stacking)
                         const btn = document.getElementById("confirmLeaveSessionBtn");
                         if (btn) {
                             btn.onclick = () => {
@@ -675,17 +627,8 @@ async function displayInfo() {
                         if (btn) {
                             btn.onclick = async () => {
                                 btn.disabled = true;
-
-                                // End the session (NO notifications inside)
                                 await endSession(id);
-
-                                // Close modal
                                 modal.hide();
-
-                                // ❗ DO NOT set UI to ended
-                                // ❗ DO NOT show any notification here
-                                // ❗ The real-time listener handles everything
-
                                 btn.disabled = false;
                             };
                         }
@@ -707,7 +650,7 @@ async function displayInfo() {
             if (!hasJoinedThis && sessionCheck.isInSession && !isCreator) {
                 updateJoinButtonState(false, true);
 
-                // show info message once
+                // Show info message
                 if (!document.querySelector(".already-in-session-info") && joinBtn && joinBtn.parentElement) {
                     const infoDiv = document.createElement("div");
                     infoDiv.className = "alert alert-info mt-3 already-in-session-info";

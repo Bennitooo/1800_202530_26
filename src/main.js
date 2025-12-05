@@ -1,9 +1,11 @@
+// Firebase Authentication helper functions
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap";
 import { db } from "./firebaseConfig.js";
 import { doc, getDoc, collection, getDocs } from "firebase/firestore";
 import { onAuthReady } from "/src/authentication.js";
 
+// Display a quote from the firebase quotes collection
 async function readQuote() {
     const quotesCollection = collection(db, "quotes");
     const querySnapshot = await getDocs(quotesCollection);
@@ -12,7 +14,7 @@ async function readQuote() {
 
     const quoteEl = document.getElementById("quote-goes-here");
 
-    if (!quoteEl) return; // avoid errors on pages without quote
+    if (!quoteEl) return;
 
     if (quotes.length > 0) {
         const randomIndex = Math.floor(Math.random() * quotes.length);
@@ -22,14 +24,14 @@ async function readQuote() {
     }
 }
 
+// Loads Dashboard
 function showDashboard() {
     const nameElement = document.getElementById("name-goes-here");
 
-    // If this page doesn't need auth, stop here
     if (!nameElement) return;
 
     onAuthReady(async (user) => {
-        // Prevent login-loop: redirect ONLY if NOT on index.html
+        // Prevent login-loop, redirect only if NOT on index.html
         const onIndexPage = window.location.pathname.endsWith("index.html");
 
         if (!user && !onIndexPage) {

@@ -1,6 +1,4 @@
-// ====================================================================
-// IMPORTS
-// ====================================================================
+// Firebase Authentication helper functions
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap";
 import { Modal } from "bootstrap";
@@ -14,16 +12,12 @@ import {
     arrayUnion,
     arrayRemove,
     collection,
-    addDoc
+    addDoc,
+    serverTimestamp
 } from "firebase/firestore";
 import { onAuthReady } from "./authentication.js";
 import { onAuthStateChanged } from "firebase/auth";
 import { showNotification } from "./notification.js";
-
-
-// ====================================================================
-// UTILITIES
-// ====================================================================
 
 // Detect which user profile is being viewed
 function getViewedUserId() {
@@ -38,10 +32,7 @@ function getField(obj, key, fallback) {
     return obj && key in obj ? obj[key] : fallback;
 }
 
-
-// ====================================================================
-// FOLLOW LIST MODAL
-// ====================================================================
+// Follow List Modal
 async function openFollowList(type) {
     const modalTitle = document.getElementById("followListTitle");
     const listContainer = document.getElementById("followListContainer");
@@ -86,10 +77,7 @@ async function openFollowList(type) {
     new bootstrap.Modal(document.getElementById("followListModal")).show();
 }
 
-
-// ====================================================================
-// MAIN PROFILE LOGIC
-// ====================================================================
+// Main Profile Logic
 function showProfile() {
     const el = {
         name: document.getElementById("name-goes-here"),
@@ -136,16 +124,14 @@ function showProfile() {
         const profileRef = doc(db, "users", window.viewingProfileId);
         const xpRef = doc(db, "usersXPsystem", window.viewingProfileId);
 
-        // Disable editing when viewing someone else
+        // Disable editing when viewing another profile
         if (!viewingOwn) {
             el.editBioBtn.classList.add("d-none");
             el.inputImage.disabled = true;
             el.editBadgeBtn.classList.add("d-none");
         }
 
-        // ------------------------------------------------------------------
-        // REAL-TIME PROFILE DATA
-        // ------------------------------------------------------------------
+        // Real-time profile listener
         onSnapshot(profileRef, (snap) => {
             if (!snap.exists()) return;
             const data = snap.data();
@@ -161,9 +147,7 @@ function showProfile() {
             el.followingCount.textContent = data.following?.length ?? 0;
         });
 
-        // ------------------------------------------------------------------
-        // REAL-TIME XP SYSTEM
-        // ------------------------------------------------------------------
+        // Real-Time XP System
         onSnapshot(xpRef, (snap) => {
             if (!snap.exists()) return;
             const xp = snap.data().xp ?? 0;
@@ -176,9 +160,7 @@ function showProfile() {
             renderBadges(badges);
         });
 
-        // ------------------------------------------------------------------
-        // BIO EDITING
-        // ------------------------------------------------------------------
+        // Bio Editing
         if (el.editBioBtn) {
             let editing = false;
 
@@ -205,9 +187,7 @@ function showProfile() {
             };
         }
 
-        // ------------------------------------------------------------------
-        // BADGE RENDERING
-        // ------------------------------------------------------------------
+        // Badge Rendering
         function renderBadges(selected) {
             el.badgeContainer.innerHTML = "";
             if (selected.length === 0) {
@@ -224,9 +204,7 @@ function showProfile() {
             });
         }
 
-        // ------------------------------------------------------------------
-        // BADGE SELECTION MODAL
-        // ------------------------------------------------------------------
+        // Badge Selection Modal
         if (el.editBadgeBtn) {
             el.editBadgeBtn.onclick = async () => {
                 const modal = new Modal(document.getElementById("badgeModal"));
@@ -268,9 +246,7 @@ function showProfile() {
             };
         }
 
-        // ------------------------------------------------------------------
-        // PROFILE IMAGE UPLOAD
-        // ------------------------------------------------------------------
+        // Profile Image Uploading
         if (el.profileImage && el.inputImage) {
             el.profileImage.onclick = () => viewingOwn && el.inputImage.click();
 
@@ -294,100 +270,79 @@ function showProfile() {
             };
         }
 
-// ====================================================================
-// FOLLOW SYSTEM with FEED EVENT CREATION
-// ====================================================================
-async function setupFollowButton() {
-    if (!el.followBtn || viewingOwn) {
-        el.followBtn.classList.add("d-none");
-        return;
-    }
+        // Follow System
+        async function setupFollowButton() {
+            if (!el.followBtn) return;
 
-    // Show button
-    el.followBtn.classList.remove("d-none");
+            const viewedUID = window.viewingProfileId;
+            const viewingOwn = (viewedUID === user.uid);
 
-    const currentRef = doc(db, "users", user.uid);              // YOU (the follower)
-    const viewedRef = doc(db, "users", window.viewingProfileId); // Person you're viewing
+            // Hide button on your own profile
+            if (viewingOwn) {
+                el.followBtn.classList.add("d-none");
+                return;
+            }
 
-    const snap = await getDoc(currentRef);
-    const following = snap.data()?.following ?? [];
+            el.followBtn.classList.remove("d-none");
 
-    let isFollowing = following.includes(otherUID);
+            const currentRef = doc(db, "users", user.uid);
+            const viewedRef = doc(db, "users", viewedUID);
 
-    el.followBtn.textContent = isFollowing ? "Unfollow" : "Follow";
+            const snap = await getDoc(currentRef);
+            const following = snap.data()?.following ?? [];
 
-    el.followBtn.onclick = async () => {
+            let isFollowing = following.includes(viewedUID);
 
-        if (isFollowing) {
-            // --------------------------
-            // UNFOLLOW
-            // --------------------------
-            await updateDoc(currentRef, {
-                following: arrayRemove(otherUID)
-            });
+            // Initial UI state
+            el.followBtn.textContent = isFollowing ? "Unfollow" : "Follow";
 
-            await updateDoc(viewedRef, {
-                followers: arrayRemove(user.uid)
-            });
+            el.followBtn.onclick = async () => {
 
-            showNotification("Unfollowed user");
-            el.followBtn.textContent = "Follow";
+                if (isFollowing) {
+                    // Unfollow
+                    await updateDoc(currentRef, { following: arrayRemove(viewedUID) });
+                    await updateDoc(viewedRef, { followers: arrayRemove(user.uid) });
 
-        } else {
-            // --------------------------
-            // FOLLOW
-            // --------------------------
-            await updateDoc(currentRef, {
-                following: arrayUnion(otherUID)
-            });
+                    showNotification("Unfollowed user");
+                    el.followBtn.textContent = "Follow";
+                }
+                else {
+                    // Follow
+                    await updateDoc(currentRef, { following: arrayUnion(viewedUID) });
+                    await updateDoc(viewedRef, { followers: arrayUnion(user.uid) });
 
-            await updateDoc(viewedRef, {
-                followers: arrayUnion(user.uid)
-            });
+                    // Generate Social Feed event
+                    const eventsRef = collection(db, "feed", viewedUID, "events");
+                    const followerSnap = await getDoc(currentRef);
+                    const followerData = followerSnap.data();
 
-            // =========================================================
-            // CREATE FEED EVENT FOR THE USER WHO GOT FOLLOWED
-            // =========================================================
-            const eventsRef = collection(db, "feed", otherUID, "events");  
-            // ^ Event goes into THEIR feed (NOT yours)
+                    await addDoc(eventsRef, {
+                        type: "follow",
+                        followerId: user.uid,
+                        followerName: followerData.name || "Unknown User",
+                        followerImage: followerData.profileImage || null,
+                        timestamp: serverTimestamp()
+                    });
 
-            const followerSnap = await getDoc(currentRef);
-            const followerData = followerSnap.data();
-
-            await addDoc(eventsRef, {
-                type: "follow",
-                followerId: user.uid,
-                followerName: followerData.name || "Unknown User",
-                followerImage: followerData.profileImage || null,
-                timestamp: Date.now()
-            });
-            // =========================================================
-
-            showNotification("You are now following this user!");
-            el.followBtn.textContent = "Unfollow";
+                    showNotification("You are now following this user!");
+                    el.followBtn.textContent = "Unfollow";
+                }
+                isFollowing = !isFollowing;
+            };
         }
-
-        isFollowing = !isFollowing;
-    };
-}
-        // IMPORTANT: call it here
         setupFollowButton();
     });
 }
 
 showProfile();
 
-
-// ====================================================================
-// LOAD PROFILE IMAGE AFTER REFRESH (own profile)
-// ====================================================================
+// Maintain consistent profile picture after refresh
 onAuthStateChanged(auth, async (user) => {
     if (!user) return;
 
-    // Only load the logged-in user’s image when they are viewing THEIR OWN profile
     const viewedUID = getViewedUserId();
     const viewingOwn = !viewedUID || viewedUID === user.uid;
-    if (!viewingOwn) return;  // DO NOT overwrite other profiles
+    if (!viewingOwn) return;
 
     const snap = await getDoc(doc(db, "users", user.uid));
     if (snap.exists() && snap.data().profileImage) {

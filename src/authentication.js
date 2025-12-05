@@ -1,13 +1,8 @@
-// ------------------------------------------------------------
 // Firebase Authentication helper functions
-// ------------------------------------------------------------
-
 import { db } from "/src/firebaseConfig.js";
 import { doc, setDoc, getDoc } from "firebase/firestore";
-
-// Firebase Auth imports
 import { auth } from "/src/firebaseConfig.js";
-import { 
+import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   updateProfile,
@@ -15,21 +10,15 @@ import {
   signOut,
 } from "firebase/auth";
 
-// -------------------------------------------------------------
-// loginUser()
-// -------------------------------------------------------------
+//Login Function
 export async function loginUser(email, password) {
   return signInWithEmailAndPassword(auth, email, password);
 }
 
-// -------------------------------------------------------------
-// Default available badges
-// -------------------------------------------------------------
+// Default badge collection.
 const DEFAULT_BADGE_COLLECTION = ["favorite", "anchor", "star"];
 
-// -------------------------------------------------------------
-// Creates XP profile on FIRST sign-up only
-// -------------------------------------------------------------
+// Creates file in usersXPsystem firebase collection
 async function createUserXPDocument(user) {
   const xpRef = doc(db, "usersXPsystem", user.uid);
 
@@ -44,9 +33,7 @@ async function createUserXPDocument(user) {
   });
 }
 
-// -------------------------------------------------------------
-// signupUser()
-// -------------------------------------------------------------
+// Sign up function
 export async function signupUser(name, email, password) {
   const userCredential = await createUserWithEmailAndPassword(auth, email, password);
   const user = userCredential.user;
@@ -58,7 +45,7 @@ export async function signupUser(name, email, password) {
     email,
     bio: "Starting my fitness journey!",
     country: "Canada",
-    profileImage: "" // initialize empty so profile doesn't break
+    profileImage: ""
   });
 
   await createUserXPDocument(user);
@@ -66,23 +53,18 @@ export async function signupUser(name, email, password) {
   return user;
 }
 
-// -------------------------------------------------------------
-// logout
-// -------------------------------------------------------------
+// Logout function
 export async function logoutUser() {
   await signOut(auth);
   window.location.href = "index.html";
 }
 
-// -------------------------------------------------------------
-// SAFE auth-state handling (no infinite loops)
-// -------------------------------------------------------------
+// Check authentication 
 export function checkAuthState() {
   onAuthStateChanged(auth, (user) => {
 
     const path = window.location.pathname;
 
-    // pages that REQUIRE login
     const protectedPages = [
       "/dashboard.html",
       "/main.html",
@@ -98,26 +80,22 @@ export function checkAuthState() {
       return;
     }
 
-    // If on login/signup and user IS logged in → redirect to dashboard
+    // If on login/signup and user is logged in, redirect to 
     const authPages = ["/login.html", "/signup.html"];
     const onAuthPage = authPages.some((p) => path.endsWith(p));
 
     if (onAuthPage && user) {
-      window.location.href = "dashboard.html";
+      window.location.href = "main.html";
     }
   });
 }
 
-// -------------------------------------------------------------
 // onAuthReady(callback)
-// -------------------------------------------------------------
 export function onAuthReady(callback) {
   return onAuthStateChanged(auth, callback);
 }
 
-// -------------------------------------------------------------
 // authErrorMessage()
-// -------------------------------------------------------------
 export function authErrorMessage(error) {
   const code = (error?.code || "").toLowerCase();
 

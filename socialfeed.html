@@ -9,16 +9,17 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- Web Components -->
+  <!-- Web Components for shared navbar and footer layout -->
   <script type="module" src="/src/components/site-navbar.js"></script>
   <script type="module" src="/src/components/site-footer.js"></script>
 
-  <!-- Google & Icons -->
+  <!-- Other libraries go here -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <!-- Google Icons (Material Design)-->
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
 
-  <!-- Custom styles -->
+  <!-- Link to styles of your own -->
   <link rel="stylesheet" href="./styles/style.css" />
 </head>
 
@@ -42,13 +43,15 @@
   <site-footer></site-footer>
 
   <!---------------------------------------------->
-  <!-- Your own JavaScript functions go here     -->
+  <!-- Your own JavaScript functions go here    -->
   <!---------------------------------------------->
 
+  <!-- Link to scripts of your own -->
   <script type="module" src="./src/main.js"></script>
   <script type="module" src="./src/socialfeed.js"></script>
 
-  <!-- Firebase scripts -->
+  <!-- Firebase and authentication related scripts -->
+  <!-- The order of loading matters -->
   <script type="module" src="/src/firebaseConfig.js"></script>
   <script type="module" src="/src/authentication.js"></script>
 

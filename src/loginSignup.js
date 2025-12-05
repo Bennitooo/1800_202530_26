@@ -1,11 +1,4 @@
-// -------------------------------------------------------------
-// src/loginSignup.js
-// -------------------------------------------------------------
-// Part of the COMP1800 Projects 1 Course (BCIT).
-// Starter code provided for students to use and adapt.
-// Manages the login/signup form behaviour and redirects.
-// -------------------------------------------------------------
-
+// Firebase Authentication helper functions
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap';
 import {
@@ -14,14 +7,12 @@ import {
     authErrorMessage,
 } from './authentication.js';
 
-
-// --- Login and Signup Page ---
+// Login and Signup Page
 // Handles toggling between Login/Signup views and form submits
 // using plain DOM APIs for simplicity and maintainability.
 
-
 function initAuthUI() {
-    // --- DOM Elements ---
+    // DOM Elements 
     const alertEl = document.getElementById('authAlert');
     const loginView = document.getElementById('loginView');
     const signupView = document.getElementById('signupView');
@@ -31,7 +22,7 @@ function initAuthUI() {
     const signupForm = document.getElementById('signupForm');
     const redirectUrl = 'main.html';
 
-    // --- Helper Functions ---
+    // Helper Functions 
     // Toggle element visibility
     function setVisible(el, visible) {
         el.classList.toggle('d-none', !visible);
@@ -43,7 +34,7 @@ function initAuthUI() {
         alertEl.textContent = msg || '';
         alertEl.classList.remove('d-none');
         clearTimeout(errorTimeout);
-        errorTimeout = setTimeout(hideError, 5000); // Auto-hide after 5s
+        errorTimeout = setTimeout(hideError, 5000);
     }
 
     // Hide error message
@@ -59,7 +50,7 @@ function initAuthUI() {
         if (submitBtn) submitBtn.disabled = disabled;
     }
 
-    // --- Event Listeners ---
+    // Event Listeners
     // Toggle buttons
     toSignupBtn?.addEventListener('click', (e) => {
         e.preventDefault();
@@ -123,5 +114,4 @@ function initAuthUI() {
     });
 }
 
-// --- Initialize UI on DOMContentLoaded ---
 document.addEventListener('DOMContentLoaded', initAuthUI);
