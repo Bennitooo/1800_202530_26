@@ -1,0 +1,53 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // This rule allows anyone with your Firestore database reference to view, edit,
+    // and delete all data in your Firestore database. It is useful for getting
+    // started, but it is configured to expire after 30 days because it
+    // leaves your app open to attackers. At that time, all client
+    // requests to your Firestore database will be denied.
+    //
+    // Make sure to write security rules for your app before that time, or else
+    // all client requests to your Firestore database will be denied until you Update
+    // your rules
+    match /{document=**} {
+      allow read, write: if request.time < timestamp.date(2027, 12, 4);
+    }
+    match /some_collection/{userId}/{document} {
+      allow read, write: if request.auth != null && request.auth.uid == userId
+    }
+    // User profiles
+    match /users/{userId} {
+      allow read: if true; // Anyone can read user profiles
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Workout sessions - stored at root level
+    match /workoutSessions/{sessionId} {
+      // Anyone can read public sessions, only creator can read private ones
+      allow read: if resource.data.isPublic == true || 
+                     (request.auth != null && request.auth.uid == resource.data.uid);
+      
+      // Must be logged in to create a session
+      allow create: if request.auth != null;
+      
+      // Only the creator can update or delete their session
+      allow update, delete: if request.auth != null && 
+                               request.auth.uid == resource.data.uid;
+      
+      // Participants subcollection
+      match /participants/{userId} {
+        // Anyone can read participants if the session is public
+        allow read: if get(/databases/$(database)/documents/workoutSessions/$(sessionId)).data.isPublic == true;
+        
+        // Users can add themselves as participants
+        allow create: if request.auth != null && request.auth.uid == userId;
+        
+        // Users can remove themselves from participants
+        allow delete: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+  }
+}
