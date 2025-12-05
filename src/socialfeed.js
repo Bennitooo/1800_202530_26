@@ -1,6 +1,4 @@
-// =======================================================
-// SOCIAL FEED — DISPLAY EVENTS (FOLLOW + SESSION ENDED)
-// =======================================================
+// Firebase Authentication helper functions
 import { auth, db } from "./firebaseConfig.js";
 import {
     collection,
@@ -14,9 +12,7 @@ import { onAuthStateChanged } from "firebase/auth";
 
 const feedContainer = document.getElementById("feed-container");
 
-// -------------------------------------
 // Fetch profile (for correct displayName)
-// -------------------------------------
 async function fetchUserProfile(uid) {
     const snap = await getDoc(doc(db, "users", uid));
     return snap.exists() ? snap.data() : {};
@@ -36,10 +32,7 @@ function formatTime(ts) {
     return date.toLocaleString();
 }
 
-
-// =======================================================
-// FOLLOW EVENT CARD
-// =======================================================
+// Follow Event Card
 function createFollowCard(event) {
     const imgSrc = event.followerImage
         ? `data:image/png;base64,${event.followerImage}`
@@ -70,10 +63,7 @@ function createFollowCard(event) {
     return card;
 }
 
-
-// =======================================================
-// SESSION ENDED EVENT CARD (with correct name)
-// =======================================================
+// Session Ended Card
 async function createSessionEndedCard(event) {
     const profile = await fetchUserProfile(event.creatorId);
 
@@ -114,10 +104,7 @@ async function createSessionEndedCard(event) {
     return card;
 }
 
-
-// =======================================================
-// MAIN FEED LISTENER (Instant Loading — No Staggering)
-// =======================================================
+// Main Feed Listener
 onAuthStateChanged(auth, (user) => {
     if (!user) return;
 
@@ -125,7 +112,7 @@ onAuthStateChanged(auth, (user) => {
     const q = query(eventsRef, orderBy("timestamp", "desc"));
 
     onSnapshot(q, async (snapshot) => {
-        feedContainer.innerHTML = ""; 
+        feedContainer.innerHTML = "";
 
         // Empty state
         if (snapshot.empty) {
@@ -137,7 +124,7 @@ onAuthStateChanged(auth, (user) => {
             return;
         }
 
-        // Build all cards *in parallel*
+        // Build all cards
         const cardPromises = snapshot.docs.map(async (docSnap) => {
             const event = docSnap.data();
 
@@ -152,10 +139,7 @@ onAuthStateChanged(auth, (user) => {
             return null;
         });
 
-        // Wait for ALL cards first
         const cards = await Promise.all(cardPromises);
-
-        // Then insert all at once (fast, smooth)
         const fragment = document.createDocumentFragment();
         cards.forEach(card => card && fragment.appendChild(card));
 

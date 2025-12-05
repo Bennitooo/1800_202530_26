@@ -1,7 +1,4 @@
-//---------------------------------------------------------
-// sessionsList.js — Fully Fixed Version
-//---------------------------------------------------------
-
+// Firebase Authentication helper functions
 import { auth, db } from "./firebaseConfig.js";
 import { onAuthStateChanged } from "firebase/auth";
 import {
@@ -20,9 +17,7 @@ const loadingEl = document.getElementById("sessionsLoading");
 
 let currentUnsubscribe = null;
 
-//---------------------------------------------------------
-// 1️⃣ Get user's ACTIVE session (correct location)
-//---------------------------------------------------------
+// Get User's Active Current Session
 async function getUserCurrentSession(userId) {
   try {
     console.log("Checking active session for:", userId);
@@ -49,9 +44,7 @@ async function getUserCurrentSession(userId) {
 }
 
 
-//---------------------------------------------------------
-// 2️⃣ Get participant count for each session card
-//---------------------------------------------------------
+// Get Number of Participants from Session
 async function getParticipantCount(sessionId) {
   try {
     const participantsRef = collection(db, "workoutSessions", sessionId, "participants");
@@ -63,9 +56,7 @@ async function getParticipantCount(sessionId) {
   }
 }
 
-//---------------------------------------------------------
-// 3️⃣ Build session card (supports active session highlight)
-//---------------------------------------------------------
+// Build Session card 
 async function sessionCard(docId, data, isCurrent = false) {
   const created = data.createdAt?.toDate
     ? data.createdAt.toDate().toLocaleString()
@@ -125,23 +116,21 @@ async function sessionCard(docId, data, isCurrent = false) {
   return div;
 }
 
-//---------------------------------------------------------
-// 4️⃣ Render list — pin active session at top
-//---------------------------------------------------------
+// Session Render list, Keep Active Session at top
 async function render(docs, userId) {
   listEl.innerHTML = "";
 
-  // ⭐ Always update badge FIRST
+  // Updates amount of sessions badge
   const badge = document.getElementById("sessionCount");
   if (badge) {
     const count = docs.length;
     badge.textContent =
       count === 0 ? "0 Sessions" :
-      count === 1 ? "1 Session" :
-      `${count} Sessions`;
+        count === 1 ? "1 Session" :
+          `${count} Sessions`;
   }
 
-  // ⭐ Handle empty state (after badge is updated)
+  // Handle empty state (after badge is updated)
   if (!docs.length) {
     listEl.innerHTML = `<div class="col-12 text-center text-muted">No active sessions right now.</div>`;
     if (loadingEl) loadingEl.style.display = "none";
@@ -161,7 +150,7 @@ async function render(docs, userId) {
 
   listEl.innerHTML = "";
 
-  // ⭐ Put user’s active session at top
+  // Put user’s active session at top
   if (currentDoc) {
     const card = await sessionCard(currentDoc.id, currentDoc.data(), true);
     listEl.appendChild(card);
@@ -173,15 +162,10 @@ async function render(docs, userId) {
     listEl.appendChild(card);
   }
 
-  // Hide loading spinner
   if (loadingEl) loadingEl.style.display = "none";
 }
 
-
-
-//---------------------------------------------------------
-// 5️⃣ Listen for active public sessions
-//---------------------------------------------------------
+// Listen for active public sessions
 function showAllSessions(userId) {
   if (currentUnsubscribe) currentUnsubscribe();
 
@@ -219,9 +203,7 @@ function showAllSessions(userId) {
   );
 }
 
-//---------------------------------------------------------
-// 6️⃣ Auth listener
-//---------------------------------------------------------
+// 6Auth listener
 onAuthStateChanged(auth, (user) => {
   if (!user) {
     listEl.innerHTML = `<div class="col-12 text-center text-muted">Sign in to see sessions.</div>`;

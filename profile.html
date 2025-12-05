@@ -9,13 +9,14 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- Web Components -->
+  <!-- Web Components for shared navbar and footer layout -->
   <script type="module" src="/src/components/site-navbar.js"></script>
   <script type="module" src="/src/components/site-footer.js"></script>
 
-  <!-- Google Icons -->
+  <!-- Other libraries go here -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <!-- Google Icons (Material Design)-->
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
 
   <!-- Custom styles -->
@@ -30,7 +31,7 @@
     <div class="card text-center" style="min-width: 75%;">
       <div class="card-header">Profile</div>
 
-      <!-- Profile Image + Upload -->
+      <!-- Profile Image & Upload -->
       <div class="image d-flex flex-column justify-content-center align-items-center pt-3">
         <span class="border border-5 border-primary rounded-circle" style="cursor: pointer;">
           <img id="profileImage" class="rounded-circle" height="120" width="120" alt="Profile Picture">
@@ -42,7 +43,7 @@
 
       <div class="container gy-5 card-body px-4">
 
-        <!-- NAME -->
+        <!-- Name -->
         <h5 class="card-title mb-3">
           <span id="name-goes-here">Loading...</span>
         </h5>
@@ -50,7 +51,7 @@
         <button id="follow-btn" class="btn btn-primary w-50 mt-2 d-none">
           Follow
         </button>
-        <!-- FOLLOWERS + FOLLOWING CARDS -->
+        <!-- Following & Following Card -->
         <div class="row g-3 mt-3 mb-3">
           <!-- Following Card -->
           <div class="col-6">
@@ -70,7 +71,7 @@
 
         </div>
 
-        <!-- LEVEL + XP -->
+        <!-- Level/XP Card -->
         <div class="card p-3 mb-3 mx-auto w-100">
           <p class="mb-2 text-center">
             Lvl: <span id="level-goes-here">0</span>
@@ -87,7 +88,7 @@
             </span>
           </div>
         </div>
-        <!-- BADGES -->
+        <!-- Badges Card -->
         <div class="card p-3 mb-3 mx-auto w-100 position-relative">
           <span id="editBadgeButton" class="material-icons position-absolute"
             style="top: 12px; right: 12px; cursor: pointer; color: #444; font-size: 22px;">
@@ -101,7 +102,7 @@
           </div>
         </div>
 
-        <!-- BIO -->
+        <!-- Bio Card-->
         <div class="card p-3 mb-2 mx-auto w-100 position-relative">
 
           <span id="editBioButton" class="material-icons position-absolute"

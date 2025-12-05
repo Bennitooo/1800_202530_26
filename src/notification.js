@@ -1,5 +1,3 @@
-// notification.js
-
 // Ensure Bootstrap bundle is loaded
 if (!window.bootstrap) {
     const script = document.createElement("script");
@@ -15,9 +13,9 @@ export function showNotification(message, duration = 2000) {
     const toastEl = document.createElement("div");
     toastEl.className = "toast text-bg-primary border-0 d-flex justify-content-center";
     toastEl.role = "alert";
-    toastEl.style.minWidth = "250px";    
-    toastEl.style.textAlign = "center";  
-    
+    toastEl.style.minWidth = "250px";
+    toastEl.style.textAlign = "center";
+
     toastEl.innerHTML = `
         <div class="toast-body w-100">
             ${message}
